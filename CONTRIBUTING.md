@@ -1,12 +1,12 @@
 # Contributing to OmniDeck
 
-Companion to `architecture.md` and `implementation_plan.md`. Read those first — this file only
-covers day-to-day mechanics.
+Day-to-day mechanics. The architecture baseline and delivery plan these refer to are internal
+documents and are not published in this repository; see the note at the end of the README.
 
 ## Branching & merges
 
-Trunk-based development (implementation_plan.md §2): short-lived branches off `main`, merged via
-PR, behind a feature flag if user-visible. No long-lived feature branches.
+Trunk-based development: short-lived branches off `main`, merged via PR, behind a feature flag
+if user-visible. No long-lived feature branches.
 
 - Branch names: `<ticket>-short-description`, e.g. `od-009-lint-rules`.
 - One PR = one reviewable change. Split unrelated work into separate PRs.
@@ -32,7 +32,7 @@ a module id, etc.
 feat(kernel): add PermissionBroker rationale UI [OD-127]
 
 Denial handling was previously a dead end — this adds the settings deep link
-required by architecture.md §12 before any module can request a runtime permission.
+required by the security model before any module can request a runtime permission.
 ```
 
 A commit that changes `platform/omnideck-sdk`'s public API must say so in the body and include
@@ -51,9 +51,8 @@ CI re-runs all of this; it is not optional pre-work, it is a faster local feedba
 ## Architecture changes
 
 A change to a Phase 0–established guardrail (dependency rules, DI approach, storage isolation,
-signing, etc.) needs an ADR, not just a PR description. Copy `docs/adr/template.md`, fill it in,
-get it reviewed alongside the code change. See the RACI table in implementation_plan.md §3 for who
-signs off on what.
+signing, etc.) needs an ADR recorded in the internal decision log, not just a PR description.
+Write it up and get it reviewed alongside the code change.
 
 ## New modules
 

@@ -18,7 +18,7 @@ body:
   - type: dropdown
     id: delivery-kind
     attributes:
-      label: Delivery kind (architecture.md ADR-001)
+      label: Delivery kind
       options:
         - Feature split (bundled/on-demand)
         - Satellite (own Play listing)

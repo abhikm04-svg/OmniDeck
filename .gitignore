@@ -45,5 +45,16 @@ local.properties
 # Scratch build logs (./gradlew build *> build_log.txt and friends).
 *_log.txt
 
-# Play upload key must never live in the repo (architecture.md §12.3) — CI
-# injects it from KMS/secrets, never from a file here.
+# Play upload key must never live in the repo (§12.3 of the internal architecture
+# baseline) — CI injects it from KMS/secrets, never from a file here.
+
+# ---------------------------------------------------------------------------
+# Internal planning documents — deliberately not published.
+#
+# These stay on developer machines and in internal storage. Source comments
+# still cite them by section number (e.g. "architecture.md §5.1"); that is a
+# pointer into the internal document, not a file you will find in this repo.
+# ---------------------------------------------------------------------------
+/architecture.md
+/implementation_plan.md
+/docs/adr/

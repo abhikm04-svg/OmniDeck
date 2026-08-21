@@ -1,6 +1,6 @@
 # OmniDeck code ownership.
 #
-# Mirrors the RACI table in implementation_plan.md §3. Solo/small-team today —
+# Mirrors the ownership model in the internal delivery plan. Solo/small-team today —
 # every path defaults to @abhikm04-svg — but the structure is in place so
 # ownership can be split by area as the team grows, without restructuring
 # this file.
@@ -29,11 +29,6 @@
 
 # Modules — module teams own their own module directory.
 /modules/                      @abhikm04-svg
-
-# Architecture, ADRs, and the delivery plan — Platform Lead approval required.
-/architecture.md               @abhikm04-svg
-/implementation_plan.md        @abhikm04-svg
-/docs/adr/                     @abhikm04-svg
 
 # CI/CD and repo governance.
 /.github/                      @abhikm04-svg
