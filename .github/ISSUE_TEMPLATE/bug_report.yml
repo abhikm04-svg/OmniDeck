@@ -1,0 +1,40 @@
+name: Bug report
+description: Something in the Shell, a module, or the platform kernel is broken.
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Shell (:app)
+        - Platform SDK / kernel
+        - Design system
+        - Build system (build-logic)
+        - CI
+        - A specific module
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Expected vs. actual behaviour.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device / API level
+      placeholder: "Pixel 8, API 36"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack trace
+      render: shell

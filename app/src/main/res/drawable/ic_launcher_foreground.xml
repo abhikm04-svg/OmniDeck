@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A single rounded tile inside the adaptive-icon safe zone (66dp circle,
+         centered) — echoes the module-tile motif used on the Home screen. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M38,34 h32 a4,4 0 0 1 4,4 v32 a4,4 0 0 1 -4,4 h-32 a4,4 0 0 1 -4,-4 v-32 a4,4 0 0 1 4,-4 z" />
+    <path
+        android:fillColor="@color/ic_launcher_background"
+        android:pathData="M50,46 h8 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-8 a2,2 0 0 1 -2,-2 v-8 a2,2 0 0 1 2,-2 z" />
+</vector>

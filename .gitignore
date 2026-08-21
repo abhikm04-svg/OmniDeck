@@ -1,0 +1,40 @@
+# ---------------------------------------------------------------------------
+# Build outputs
+# ---------------------------------------------------------------------------
+build/
+*/build/
+.gradle/
+out/
+captures/
+.cxx/
+
+# ---------------------------------------------------------------------------
+# Local configuration — never commit machine-specific overrides or secrets
+# ---------------------------------------------------------------------------
+local.properties
+*.keystore
+*.jks
+!gradle/wrapper/gradle-wrapper.jar
+
+# ---------------------------------------------------------------------------
+# IDE
+# ---------------------------------------------------------------------------
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# ---------------------------------------------------------------------------
+# Generated reports / baselines produced by CI, not authored by hand
+# ---------------------------------------------------------------------------
+**/detekt-baseline.xml
+**/lint-baseline.xml
+**/*.hprof
+
+# ---------------------------------------------------------------------------
+# Kotlin/Native, KSP
+# ---------------------------------------------------------------------------
+.kotlin/
+
+# Play upload key must never live in the repo (architecture.md §12.3) — CI
+# injects it from KMS/secrets, never from a file here.

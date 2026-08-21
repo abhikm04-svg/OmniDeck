@@ -1,0 +1,44 @@
+name: New module proposal
+description: Propose a new module or satellite for the catalog.
+labels: ["module-proposal"]
+body:
+  - type: input
+    id: module-id
+    attributes:
+      label: Proposed module id
+      placeholder: "finance"
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose & target user
+    validations:
+      required: true
+  - type: dropdown
+    id: delivery-kind
+    attributes:
+      label: Delivery kind (architecture.md ADR-001)
+      options:
+        - Feature split (bundled/on-demand)
+        - Satellite (own Play listing)
+        - Web module
+        - Unsure — needs discussion
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Capabilities needed (auth, network, storage, secure, billing, etc.)
+    validations:
+      required: true
+  - type: textarea
+    id: permissions
+    attributes:
+      label: Sensitive permissions required, if any
+  - type: input
+    id: owner
+    attributes:
+      label: Owning team / person
+    validations:
+      required: true

@@ -1,0 +1,1200 @@
+public final class com/omnideck/sdk/CapabilityId {
+	public static final field Companion Lcom/omnideck/sdk/CapabilityId$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/omnideck/sdk/CapabilityId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/CapabilityId$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/CapabilityId$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun deserialize-A2TK1PM (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/String;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun serialize-DC5uBt8 (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/String;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/CapabilityId$Companion {
+	public final fun getAUTH-_CqwS-0 ()Ljava/lang/String;
+	public final fun getBILLING-_CqwS-0 ()Ljava/lang/String;
+	public final fun getBIOMETRIC-_CqwS-0 ()Ljava/lang/String;
+	public final fun getCONSENT-_CqwS-0 ()Ljava/lang/String;
+	public final fun getEVENTS-_CqwS-0 ()Ljava/lang/String;
+	public final fun getFLAGS-_CqwS-0 ()Ljava/lang/String;
+	public final fun getKERNEL_PROVIDED ()Ljava/util/Set;
+	public final fun getLOCALE-_CqwS-0 ()Ljava/lang/String;
+	public final fun getMEDIA-_CqwS-0 ()Ljava/lang/String;
+	public final fun getNETWORK-_CqwS-0 ()Ljava/lang/String;
+	public final fun getNOTIFICATIONS-_CqwS-0 ()Ljava/lang/String;
+	public final fun getPERMISSIONS-_CqwS-0 ()Ljava/lang/String;
+	public final fun getROUTER-_CqwS-0 ()Ljava/lang/String;
+	public final fun getSECURE_STORE-_CqwS-0 ()Ljava/lang/String;
+	public final fun getSTORAGE-_CqwS-0 ()Ljava/lang/String;
+	public final fun getTELEMETRY-_CqwS-0 ()Ljava/lang/String;
+	public final fun getWORK-_CqwS-0 ()Ljava/lang/String;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/CorrelationId {
+	public static final field Companion Lcom/omnideck/sdk/CorrelationId$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/omnideck/sdk/CorrelationId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/CorrelationId$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/CorrelationId$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun deserialize-aXrqMgY (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/String;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun serialize-2nyU1hY (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/String;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/CorrelationId$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/DataCategory : java/lang/Enum {
+	public static final field APP_ACTIVITY Lcom/omnideck/sdk/DataCategory;
+	public static final field APP_INFO_AND_PERFORMANCE Lcom/omnideck/sdk/DataCategory;
+	public static final field AUDIO Lcom/omnideck/sdk/DataCategory;
+	public static final field CALENDAR Lcom/omnideck/sdk/DataCategory;
+	public static final field CONTACTS Lcom/omnideck/sdk/DataCategory;
+	public static final field Companion Lcom/omnideck/sdk/DataCategory$Companion;
+	public static final field DEVICE_OR_OTHER_IDS Lcom/omnideck/sdk/DataCategory;
+	public static final field FILES_AND_DOCS Lcom/omnideck/sdk/DataCategory;
+	public static final field FINANCIAL_INFO Lcom/omnideck/sdk/DataCategory;
+	public static final field HEALTH_AND_FITNESS Lcom/omnideck/sdk/DataCategory;
+	public static final field LOCATION Lcom/omnideck/sdk/DataCategory;
+	public static final field MESSAGES Lcom/omnideck/sdk/DataCategory;
+	public static final field NONE Lcom/omnideck/sdk/DataCategory;
+	public static final field PERSONAL_INFO Lcom/omnideck/sdk/DataCategory;
+	public static final field PHOTOS_AND_VIDEOS Lcom/omnideck/sdk/DataCategory;
+	public static final field WEB_BROWSING Lcom/omnideck/sdk/DataCategory;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/DataCategory;
+	public static fun values ()[Lcom/omnideck/sdk/DataCategory;
+}
+
+public final class com/omnideck/sdk/DataCategory$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/DeliveryKind : java/lang/Enum {
+	public static final field BUNDLED Lcom/omnideck/sdk/DeliveryKind;
+	public static final field Companion Lcom/omnideck/sdk/DeliveryKind$Companion;
+	public static final field FEATURE_SPLIT Lcom/omnideck/sdk/DeliveryKind;
+	public static final field SATELLITE Lcom/omnideck/sdk/DeliveryKind;
+	public static final field WEB Lcom/omnideck/sdk/DeliveryKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/DeliveryKind;
+	public static fun values ()[Lcom/omnideck/sdk/DeliveryKind;
+}
+
+public final class com/omnideck/sdk/DeliveryKind$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class com/omnideck/sdk/EntitlementPolicy {
+	public static final field Companion Lcom/omnideck/sdk/EntitlementPolicy$Companion;
+}
+
+public final class com/omnideck/sdk/EntitlementPolicy$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/EntitlementPolicy$Free : com/omnideck/sdk/EntitlementPolicy {
+	public static final field INSTANCE Lcom/omnideck/sdk/EntitlementPolicy$Free;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/EntitlementPolicy$Internal : com/omnideck/sdk/EntitlementPolicy {
+	public static final field INSTANCE Lcom/omnideck/sdk/EntitlementPolicy$Internal;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/EntitlementPolicy$RequiresEntitlement : com/omnideck/sdk/EntitlementPolicy {
+	public static final field Companion Lcom/omnideck/sdk/EntitlementPolicy$RequiresEntitlement$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-gBZwjLQ ()Ljava/lang/String;
+	public final fun copy-BJACWBk (Ljava/lang/String;)Lcom/omnideck/sdk/EntitlementPolicy$RequiresEntitlement;
+	public static synthetic fun copy-BJACWBk$default (Lcom/omnideck/sdk/EntitlementPolicy$RequiresEntitlement;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/EntitlementPolicy$RequiresEntitlement;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSku-gBZwjLQ ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/EntitlementPolicy$RequiresEntitlement$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/EntitlementPolicy$RequiresEntitlement$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/EntitlementPolicy$RequiresEntitlement;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/EntitlementPolicy$RequiresEntitlement;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/EntitlementPolicy$RequiresEntitlement$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class com/omnideck/sdk/IconRef {
+	public static final field Companion Lcom/omnideck/sdk/IconRef$Companion;
+}
+
+public final class com/omnideck/sdk/IconRef$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/IconRef$Drawable : com/omnideck/sdk/IconRef {
+	public static final field Companion Lcom/omnideck/sdk/IconRef$Drawable$Companion;
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Lcom/omnideck/sdk/IconRef$Drawable;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/IconRef$Drawable;IILjava/lang/Object;)Lcom/omnideck/sdk/IconRef$Drawable;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getResourceId ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/IconRef$Drawable$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/IconRef$Drawable$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/IconRef$Drawable;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/IconRef$Drawable;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/IconRef$Drawable$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/IconRef$Remote : com/omnideck/sdk/IconRef {
+	public static final field Companion Lcom/omnideck/sdk/IconRef$Remote$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/omnideck/sdk/IconRef$Remote;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/IconRef$Remote;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/IconRef$Remote;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/IconRef$Remote$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/IconRef$Remote$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/IconRef$Remote;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/IconRef$Remote;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/IconRef$Remote$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/IconRef$Symbol : com/omnideck/sdk/IconRef {
+	public static final field Companion Lcom/omnideck/sdk/IconRef$Symbol$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/omnideck/sdk/IconRef$Symbol;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/IconRef$Symbol;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/IconRef$Symbol;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/IconRef$Symbol$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/IconRef$Symbol$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/IconRef$Symbol;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/IconRef$Symbol;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/IconRef$Symbol$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class com/omnideck/sdk/InstallProgress {
+}
+
+public final class com/omnideck/sdk/InstallProgress$Canceled : com/omnideck/sdk/InstallProgress {
+	public static final field INSTANCE Lcom/omnideck/sdk/InstallProgress$Canceled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/InstallProgress$Downloading : com/omnideck/sdk/InstallProgress {
+	public fun <init> (JJ)V
+	public final fun component1 ()J
+	public final fun component2 ()J
+	public final fun copy (JJ)Lcom/omnideck/sdk/InstallProgress$Downloading;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/InstallProgress$Downloading;JJILjava/lang/Object;)Lcom/omnideck/sdk/InstallProgress$Downloading;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBytesDownloaded ()J
+	public final fun getFraction ()F
+	public final fun getTotalBytes ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/InstallProgress$Failed : com/omnideck/sdk/InstallProgress {
+	public fun <init> (ILjava/lang/String;Z)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (ILjava/lang/String;Z)Lcom/omnideck/sdk/InstallProgress$Failed;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/InstallProgress$Failed;ILjava/lang/String;ZILjava/lang/Object;)Lcom/omnideck/sdk/InstallProgress$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()I
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getRetryable ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/InstallProgress$Installed : com/omnideck/sdk/InstallProgress {
+	public static final field INSTANCE Lcom/omnideck/sdk/InstallProgress$Installed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/InstallProgress$Installing : com/omnideck/sdk/InstallProgress {
+	public static final field INSTANCE Lcom/omnideck/sdk/InstallProgress$Installing;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/InstallProgress$Pending : com/omnideck/sdk/InstallProgress {
+	public static final field INSTANCE Lcom/omnideck/sdk/InstallProgress$Pending;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/InstallProgress$RequiresUserConfirmation : com/omnideck/sdk/InstallProgress {
+	public static final field INSTANCE Lcom/omnideck/sdk/InstallProgress$RequiresUserConfirmation;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/LocalizedString {
+	public static final field Companion Lcom/omnideck/sdk/LocalizedString$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/util/Map;)Lcom/omnideck/sdk/LocalizedString;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/LocalizedString;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lcom/omnideck/sdk/LocalizedString;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDefault ()Ljava/lang/String;
+	public final fun getTranslations ()Ljava/util/Map;
+	public fun hashCode ()I
+	public final fun resolve (Ljava/lang/String;)Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/LocalizedString$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/LocalizedString$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/LocalizedString;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/LocalizedString;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/LocalizedString$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/ModuleCategory : java/lang/Enum {
+	public static final field COMMUNICATION Lcom/omnideck/sdk/ModuleCategory;
+	public static final field Companion Lcom/omnideck/sdk/ModuleCategory$Companion;
+	public static final field FINANCE Lcom/omnideck/sdk/ModuleCategory;
+	public static final field HEALTH Lcom/omnideck/sdk/ModuleCategory;
+	public static final field INTERNAL Lcom/omnideck/sdk/ModuleCategory;
+	public static final field LEARNING Lcom/omnideck/sdk/ModuleCategory;
+	public static final field MEDIA Lcom/omnideck/sdk/ModuleCategory;
+	public static final field PRODUCTIVITY Lcom/omnideck/sdk/ModuleCategory;
+	public static final field UTILITIES Lcom/omnideck/sdk/ModuleCategory;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/ModuleCategory;
+	public static fun values ()[Lcom/omnideck/sdk/ModuleCategory;
+}
+
+public final class com/omnideck/sdk/ModuleCategory$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/ModuleId {
+	public static final field Companion Lcom/omnideck/sdk/ModuleId$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/omnideck/sdk/ModuleId;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public static final fun getShortId-impl (Ljava/lang/String;)Ljava/lang/String;
+	public static final fun getSplitName-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/ModuleId$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/ModuleId$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun deserialize-gFnoCtU (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/String;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun serialize-jPHehlo (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/String;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/ModuleId$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class com/omnideck/sdk/ModuleInitResult {
+}
+
+public final class com/omnideck/sdk/ModuleInitResult$Degraded : com/omnideck/sdk/ModuleInitResult {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/omnideck/sdk/ModuleInitResult$Degraded;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/ModuleInitResult$Degraded;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/ModuleInitResult$Degraded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/ModuleInitResult$Failed : com/omnideck/sdk/ModuleInitResult {
+	public fun <init> (Ljava/lang/Throwable;Z)V
+	public synthetic fun <init> (Ljava/lang/Throwable;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Throwable;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/lang/Throwable;Z)Lcom/omnideck/sdk/ModuleInitResult$Failed;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/ModuleInitResult$Failed;Ljava/lang/Throwable;ZILjava/lang/Object;)Lcom/omnideck/sdk/ModuleInitResult$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ljava/lang/Throwable;
+	public final fun getRetryable ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/ModuleInitResult$Ready : com/omnideck/sdk/ModuleInitResult {
+	public static final field INSTANCE Lcom/omnideck/sdk/ModuleInitResult$Ready;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/ModuleManifest {
+	public static final field Companion Lcom/omnideck/sdk/ModuleManifest$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lcom/omnideck/sdk/SemVer;Lcom/omnideck/sdk/LocalizedString;Lcom/omnideck/sdk/LocalizedString;Lcom/omnideck/sdk/ModuleCategory;Lcom/omnideck/sdk/IconRef;Lcom/omnideck/sdk/DeliveryKind;Lcom/omnideck/sdk/SemVerRange;ILcom/omnideck/sdk/Route;Ljava/util/List;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Lcom/omnideck/sdk/EntitlementPolicy;JZZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/omnideck/sdk/SemVer;Lcom/omnideck/sdk/LocalizedString;Lcom/omnideck/sdk/LocalizedString;Lcom/omnideck/sdk/ModuleCategory;Lcom/omnideck/sdk/IconRef;Lcom/omnideck/sdk/DeliveryKind;Lcom/omnideck/sdk/SemVerRange;ILcom/omnideck/sdk/Route;Ljava/util/List;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Lcom/omnideck/sdk/EntitlementPolicy;JZZLjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-6zWiCZI ()Ljava/lang/String;
+	public final fun component10 ()Lcom/omnideck/sdk/Route;
+	public final fun component11 ()Ljava/util/List;
+	public final fun component12 ()Ljava/util/Set;
+	public final fun component13 ()Ljava/util/Set;
+	public final fun component14 ()Ljava/util/Set;
+	public final fun component15 ()Ljava/util/Set;
+	public final fun component16 ()Lcom/omnideck/sdk/EntitlementPolicy;
+	public final fun component17 ()J
+	public final fun component18 ()Z
+	public final fun component19 ()Z
+	public final fun component2 ()Lcom/omnideck/sdk/SemVer;
+	public final fun component20-d6L2nSI ()Ljava/lang/String;
+	public final fun component3 ()Lcom/omnideck/sdk/LocalizedString;
+	public final fun component4 ()Lcom/omnideck/sdk/LocalizedString;
+	public final fun component5 ()Lcom/omnideck/sdk/ModuleCategory;
+	public final fun component6 ()Lcom/omnideck/sdk/IconRef;
+	public final fun component7 ()Lcom/omnideck/sdk/DeliveryKind;
+	public final fun component8 ()Lcom/omnideck/sdk/SemVerRange;
+	public final fun component9 ()I
+	public final fun copy-P36gSrQ (Ljava/lang/String;Lcom/omnideck/sdk/SemVer;Lcom/omnideck/sdk/LocalizedString;Lcom/omnideck/sdk/LocalizedString;Lcom/omnideck/sdk/ModuleCategory;Lcom/omnideck/sdk/IconRef;Lcom/omnideck/sdk/DeliveryKind;Lcom/omnideck/sdk/SemVerRange;ILcom/omnideck/sdk/Route;Ljava/util/List;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Lcom/omnideck/sdk/EntitlementPolicy;JZZLjava/lang/String;)Lcom/omnideck/sdk/ModuleManifest;
+	public static synthetic fun copy-P36gSrQ$default (Lcom/omnideck/sdk/ModuleManifest;Ljava/lang/String;Lcom/omnideck/sdk/SemVer;Lcom/omnideck/sdk/LocalizedString;Lcom/omnideck/sdk/LocalizedString;Lcom/omnideck/sdk/ModuleCategory;Lcom/omnideck/sdk/IconRef;Lcom/omnideck/sdk/DeliveryKind;Lcom/omnideck/sdk/SemVerRange;ILcom/omnideck/sdk/Route;Ljava/util/List;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Ljava/util/Set;Lcom/omnideck/sdk/EntitlementPolicy;JZZLjava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/ModuleManifest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAndroidPermissions ()Ljava/util/Set;
+	public final fun getCategory ()Lcom/omnideck/sdk/ModuleCategory;
+	public final fun getDataCategories ()Ljava/util/Set;
+	public final fun getDeepLinks ()Ljava/util/List;
+	public final fun getDelivery ()Lcom/omnideck/sdk/DeliveryKind;
+	public final fun getDisplayName ()Lcom/omnideck/sdk/LocalizedString;
+	public final fun getEntitlement ()Lcom/omnideck/sdk/EntitlementPolicy;
+	public final fun getEntryRoute ()Lcom/omnideck/sdk/Route;
+	public final fun getEstimatedDownloadBytes ()J
+	public final fun getIcon ()Lcom/omnideck/sdk/IconRef;
+	public final fun getId-6zWiCZI ()Ljava/lang/String;
+	public final fun getMinHostVersionCode ()I
+	public final fun getOptionalCapabilities ()Ljava/util/Set;
+	public final fun getOwner-d6L2nSI ()Ljava/lang/String;
+	public final fun getProcessIsolation ()Z
+	public final fun getRequiredCapabilities ()Ljava/util/Set;
+	public final fun getSdkRange ()Lcom/omnideck/sdk/SemVerRange;
+	public final fun getSummary ()Lcom/omnideck/sdk/LocalizedString;
+	public final fun getSupportsOffline ()Z
+	public final fun getVersion ()Lcom/omnideck/sdk/SemVer;
+	public fun hashCode ()I
+	public final fun isCompatibleWith (Lcom/omnideck/sdk/SemVer;I)Z
+	public fun toString ()Ljava/lang/String;
+	public final fun unsatisfiedBy (Ljava/util/Set;)Ljava/util/Set;
+}
+
+public final synthetic class com/omnideck/sdk/ModuleManifest$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/ModuleManifest$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/ModuleManifest;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/ModuleManifest;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/ModuleManifest$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/ModuleState : java/lang/Enum {
+	public static final field ACTIVE Lcom/omnideck/sdk/ModuleState;
+	public static final field ADVERTISED Lcom/omnideck/sdk/ModuleState;
+	public static final field Companion Lcom/omnideck/sdk/ModuleState$Companion;
+	public static final field DEGRADED Lcom/omnideck/sdk/ModuleState;
+	public static final field FAILED Lcom/omnideck/sdk/ModuleState;
+	public static final field GATED Lcom/omnideck/sdk/ModuleState;
+	public static final field INITIALIZING Lcom/omnideck/sdk/ModuleState;
+	public static final field INSTALLED Lcom/omnideck/sdk/ModuleState;
+	public static final field INSTALLING Lcom/omnideck/sdk/ModuleState;
+	public static final field PURGING Lcom/omnideck/sdk/ModuleState;
+	public static final field QUARANTINED Lcom/omnideck/sdk/ModuleState;
+	public static final field SUSPENDED Lcom/omnideck/sdk/ModuleState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun isPresent ()Z
+	public final fun isUsable ()Z
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/ModuleState;
+	public static fun values ()[Lcom/omnideck/sdk/ModuleState;
+}
+
+public final class com/omnideck/sdk/ModuleState$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/PurgeScope : java/lang/Enum {
+	public static final field ALL Lcom/omnideck/sdk/PurgeScope;
+	public static final field CACHE Lcom/omnideck/sdk/PurgeScope;
+	public static final field SESSION Lcom/omnideck/sdk/PurgeScope;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/PurgeScope;
+	public static fun values ()[Lcom/omnideck/sdk/PurgeScope;
+}
+
+public final class com/omnideck/sdk/Route {
+	public static final field Companion Lcom/omnideck/sdk/Route$Companion;
+	public static final field SCHEME Ljava/lang/String;
+	public static final field SCHEME_PREFIX Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/omnideck/sdk/Route;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/Route;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/Route;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHost ()Ljava/lang/String;
+	public final fun getPath ()Ljava/lang/String;
+	public final fun getQuery ()Ljava/util/Map;
+	public final fun getUri ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/Route$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/Route$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/Route;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/Route;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/Route$Companion {
+	public final fun of-L-tXfMQ (Ljava/lang/String;Ljava/lang/String;)Lcom/omnideck/sdk/Route;
+	public static synthetic fun of-L-tXfMQ$default (Lcom/omnideck/sdk/Route$Companion;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/Route;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/RouteArgs {
+	public static final field Companion Lcom/omnideck/sdk/RouteArgs$Companion;
+	public fun <init> (Ljava/util/Map;)V
+	public final fun asMap ()Ljava/util/Map;
+	public final fun boolean (Ljava/lang/String;)Z
+	public final fun int (Ljava/lang/String;)I
+	public final fun intOrNull (Ljava/lang/String;)Ljava/lang/Integer;
+	public final fun string (Ljava/lang/String;)Ljava/lang/String;
+	public final fun stringOrNull (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/RouteArgs$Companion {
+	public final fun getEMPTY ()Lcom/omnideck/sdk/RouteArgs;
+}
+
+public final class com/omnideck/sdk/RoutePattern {
+	public static final field Companion Lcom/omnideck/sdk/RoutePattern$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/omnideck/sdk/RoutePattern;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/RoutePattern;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/RoutePattern;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun extract (Lcom/omnideck/sdk/Route;)Ljava/util/Map;
+	public final fun getPattern ()Ljava/lang/String;
+	public final fun getSpecificity ()I
+	public fun hashCode ()I
+	public final fun matches (Lcom/omnideck/sdk/Route;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/RoutePattern$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/RoutePattern$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/RoutePattern;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/RoutePattern;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/RoutePattern$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/SemVer : java/lang/Comparable {
+	public static final field Companion Lcom/omnideck/sdk/SemVer$Companion;
+	public fun <init> (IIILjava/lang/String;)V
+	public synthetic fun <init> (IIILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun compareTo (Lcom/omnideck/sdk/SemVer;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (IIILjava/lang/String;)Lcom/omnideck/sdk/SemVer;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/SemVer;IIILjava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/SemVer;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMajor ()I
+	public final fun getMinor ()I
+	public final fun getPatch ()I
+	public final fun getPreRelease ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/SemVer$Companion {
+	public final fun parse (Ljava/lang/String;)Lcom/omnideck/sdk/SemVer;
+	public final fun parseOrNull (Ljava/lang/String;)Lcom/omnideck/sdk/SemVer;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/SemVerRange {
+	public static final field Companion Lcom/omnideck/sdk/SemVerRange$Companion;
+	public fun <init> (Lcom/omnideck/sdk/SemVer;Lcom/omnideck/sdk/SemVer;)V
+	public final fun component1 ()Lcom/omnideck/sdk/SemVer;
+	public final fun component2 ()Lcom/omnideck/sdk/SemVer;
+	public final fun contains (Lcom/omnideck/sdk/SemVer;)Z
+	public final fun copy (Lcom/omnideck/sdk/SemVer;Lcom/omnideck/sdk/SemVer;)Lcom/omnideck/sdk/SemVerRange;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/SemVerRange;Lcom/omnideck/sdk/SemVer;Lcom/omnideck/sdk/SemVer;ILjava/lang/Object;)Lcom/omnideck/sdk/SemVerRange;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMaxExclusive ()Lcom/omnideck/sdk/SemVer;
+	public final fun getMinInclusive ()Lcom/omnideck/sdk/SemVer;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/SemVerRange$Companion {
+	public final fun parse (Ljava/lang/String;)Lcom/omnideck/sdk/SemVerRange;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/Sku {
+	public static final field Companion Lcom/omnideck/sdk/Sku$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/omnideck/sdk/Sku;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/Sku$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/Sku$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun deserialize-q6KrJ98 (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/String;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun serialize-zpDHdAs (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/String;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/Sku$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/SuspendReason : java/lang/Enum {
+	public static final field BACKGROUNDED Lcom/omnideck/sdk/SuspendReason;
+	public static final field ENTITLEMENT_REVOKED Lcom/omnideck/sdk/SuspendReason;
+	public static final field HOST_SHUTDOWN Lcom/omnideck/sdk/SuspendReason;
+	public static final field KILL_SWITCH Lcom/omnideck/sdk/SuspendReason;
+	public static final field MEMORY_PRESSURE Lcom/omnideck/sdk/SuspendReason;
+	public static final field SESSION_ENDED Lcom/omnideck/sdk/SuspendReason;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/SuspendReason;
+	public static fun values ()[Lcom/omnideck/sdk/SuspendReason;
+}
+
+public final class com/omnideck/sdk/TeamRef {
+	public static final field Companion Lcom/omnideck/sdk/TeamRef$Companion;
+	public static final synthetic fun box-impl (Ljava/lang/String;)Lcom/omnideck/sdk/TeamRef;
+	public static fun constructor-impl (Ljava/lang/String;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Ljava/lang/String;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Ljava/lang/String;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Ljava/lang/String;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/TeamRef$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/TeamRef$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun deserialize-WjGsgSU (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/String;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public final fun serialize-QHv4-MA (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/String;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/TeamRef$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/AuthException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;ZLjava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;ZLjava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getRecoverable ()Z
+}
+
+public abstract interface class com/omnideck/sdk/capability/AuthService {
+	public abstract fun accessToken (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getSessionState ()Lkotlinx/coroutines/flow/StateFlow;
+	public abstract fun signIn (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun signOut (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun stepUp (Lcom/omnideck/sdk/capability/AuthService$Assurance;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/omnideck/sdk/capability/AuthService$Assurance : java/lang/Enum {
+	public static final field BIOMETRIC Lcom/omnideck/sdk/capability/AuthService$Assurance;
+	public static final field MFA Lcom/omnideck/sdk/capability/AuthService$Assurance;
+	public static final field PASSWORD Lcom/omnideck/sdk/capability/AuthService$Assurance;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/capability/AuthService$Assurance;
+	public static fun values ()[Lcom/omnideck/sdk/capability/AuthService$Assurance;
+}
+
+public final class com/omnideck/sdk/capability/ConsentPurpose : java/lang/Enum {
+	public static final field CRASH_DIAGNOSTICS Lcom/omnideck/sdk/capability/ConsentPurpose;
+	public static final field ESSENTIAL Lcom/omnideck/sdk/capability/ConsentPurpose;
+	public static final field MARKETING Lcom/omnideck/sdk/capability/ConsentPurpose;
+	public static final field PERSONALISATION Lcom/omnideck/sdk/capability/ConsentPurpose;
+	public static final field PRODUCT_ANALYTICS Lcom/omnideck/sdk/capability/ConsentPurpose;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/capability/ConsentPurpose;
+	public static fun values ()[Lcom/omnideck/sdk/capability/ConsentPurpose;
+}
+
+public abstract interface class com/omnideck/sdk/capability/ConsentService {
+	public abstract fun getState ()Lkotlinx/coroutines/flow/Flow;
+	public abstract fun isGranted (Lcom/omnideck/sdk/capability/ConsentPurpose;)Z
+	public abstract fun request (Lcom/omnideck/sdk/capability/ConsentPurpose;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/omnideck/sdk/capability/ConsentState {
+	public fun <init> (Ljava/util/Set;J)V
+	public final fun component1 ()Ljava/util/Set;
+	public final fun component2 ()J
+	public final fun copy (Ljava/util/Set;J)Lcom/omnideck/sdk/capability/ConsentState;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/ConsentState;Ljava/util/Set;JILjava/lang/Object;)Lcom/omnideck/sdk/capability/ConsentState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getGranted ()Ljava/util/Set;
+	public final fun getLastUpdatedEpochMs ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/capability/EventBus {
+	public abstract fun publish (Lcom/omnideck/sdk/capability/PlatformEvent;)V
+	public abstract fun subscribe (Ljava/lang/Class;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public abstract interface class com/omnideck/sdk/capability/FeatureFlagService {
+	public abstract fun boolean (Ljava/lang/String;Z)Z
+	public abstract fun booleanFlow (Ljava/lang/String;Z)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun double (Ljava/lang/String;D)D
+	public abstract fun json (Ljava/lang/String;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public abstract fun long (Ljava/lang/String;J)J
+	public abstract fun refresh (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun string (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/capability/LocaleService {
+	public abstract fun formatCurrency (JLjava/lang/String;)Ljava/lang/String;
+	public abstract fun formatDate (JLcom/omnideck/sdk/capability/LocaleService$DateStyle;)Ljava/lang/String;
+	public static synthetic fun formatDate$default (Lcom/omnideck/sdk/capability/LocaleService;JLcom/omnideck/sdk/capability/LocaleService$DateStyle;ILjava/lang/Object;)Ljava/lang/String;
+	public abstract fun getLanguageTag ()Ljava/lang/String;
+	public abstract fun isRtl ()Z
+}
+
+public final class com/omnideck/sdk/capability/LocaleService$DateStyle : java/lang/Enum {
+	public static final field LONG Lcom/omnideck/sdk/capability/LocaleService$DateStyle;
+	public static final field MEDIUM Lcom/omnideck/sdk/capability/LocaleService$DateStyle;
+	public static final field RELATIVE Lcom/omnideck/sdk/capability/LocaleService$DateStyle;
+	public static final field SHORT Lcom/omnideck/sdk/capability/LocaleService$DateStyle;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/capability/LocaleService$DateStyle;
+	public static fun values ()[Lcom/omnideck/sdk/capability/LocaleService$DateStyle;
+}
+
+public final class com/omnideck/sdk/capability/LocaleService$DefaultImpls {
+	public static synthetic fun formatDate$default (Lcom/omnideck/sdk/capability/LocaleService;JLcom/omnideck/sdk/capability/LocaleService$DateStyle;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/capability/PlatformEvent {
+	public static final field Companion Lcom/omnideck/sdk/capability/PlatformEvent$Companion;
+	public fun getSchemaVersion ()I
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$ConnectivityChanged : com/omnideck/sdk/capability/PlatformEvent {
+	public static final field Companion Lcom/omnideck/sdk/capability/PlatformEvent$ConnectivityChanged$Companion;
+	public fun <init> (ZZ)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun copy (ZZ)Lcom/omnideck/sdk/capability/PlatformEvent$ConnectivityChanged;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/PlatformEvent$ConnectivityChanged;ZZILjava/lang/Object;)Lcom/omnideck/sdk/capability/PlatformEvent$ConnectivityChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMetered ()Z
+	public final fun getOnline ()Z
+	public fun getSchemaVersion ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/capability/PlatformEvent$ConnectivityChanged$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/PlatformEvent$ConnectivityChanged$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/capability/PlatformEvent$ConnectivityChanged;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/capability/PlatformEvent$ConnectivityChanged;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$ConnectivityChanged$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$DataPurged : com/omnideck/sdk/capability/PlatformEvent {
+	public static final field Companion Lcom/omnideck/sdk/capability/PlatformEvent$DataPurged$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lcom/omnideck/sdk/PurgeScope;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-pcUv0HQ ()Ljava/lang/String;
+	public final fun component2 ()Lcom/omnideck/sdk/PurgeScope;
+	public final fun copy--DJhiHw (Ljava/lang/String;Lcom/omnideck/sdk/PurgeScope;)Lcom/omnideck/sdk/capability/PlatformEvent$DataPurged;
+	public static synthetic fun copy--DJhiHw$default (Lcom/omnideck/sdk/capability/PlatformEvent$DataPurged;Ljava/lang/String;Lcom/omnideck/sdk/PurgeScope;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/PlatformEvent$DataPurged;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getModuleId-pcUv0HQ ()Ljava/lang/String;
+	public fun getSchemaVersion ()I
+	public final fun getScope ()Lcom/omnideck/sdk/PurgeScope;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/capability/PlatformEvent$DataPurged$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/PlatformEvent$DataPurged$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/capability/PlatformEvent$DataPurged;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/capability/PlatformEvent$DataPurged;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$DataPurged$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$DefaultImpls {
+	public static fun getSchemaVersion (Lcom/omnideck/sdk/capability/PlatformEvent;)I
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$EntitlementsChanged : com/omnideck/sdk/capability/PlatformEvent {
+	public static final field Companion Lcom/omnideck/sdk/capability/PlatformEvent$EntitlementsChanged$Companion;
+	public fun <init> (Ljava/util/Set;)V
+	public final fun component1 ()Ljava/util/Set;
+	public final fun copy (Ljava/util/Set;)Lcom/omnideck/sdk/capability/PlatformEvent$EntitlementsChanged;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/PlatformEvent$EntitlementsChanged;Ljava/util/Set;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/PlatformEvent$EntitlementsChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getSchemaVersion ()I
+	public final fun getSkus ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/capability/PlatformEvent$EntitlementsChanged$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/PlatformEvent$EntitlementsChanged$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/capability/PlatformEvent$EntitlementsChanged;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/capability/PlatformEvent$EntitlementsChanged;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$EntitlementsChanged$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$LocaleChanged : com/omnideck/sdk/capability/PlatformEvent {
+	public static final field Companion Lcom/omnideck/sdk/capability/PlatformEvent$LocaleChanged$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/omnideck/sdk/capability/PlatformEvent$LocaleChanged;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/PlatformEvent$LocaleChanged;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/PlatformEvent$LocaleChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLanguageTag ()Ljava/lang/String;
+	public fun getSchemaVersion ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/capability/PlatformEvent$LocaleChanged$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/PlatformEvent$LocaleChanged$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/capability/PlatformEvent$LocaleChanged;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/capability/PlatformEvent$LocaleChanged;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$LocaleChanged$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$ModuleStateChanged : com/omnideck/sdk/capability/PlatformEvent {
+	public static final field Companion Lcom/omnideck/sdk/capability/PlatformEvent$ModuleStateChanged$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lcom/omnideck/sdk/ModuleState;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-6zWiCZI ()Ljava/lang/String;
+	public final fun component2 ()Lcom/omnideck/sdk/ModuleState;
+	public final fun copy-L-tXfMQ (Ljava/lang/String;Lcom/omnideck/sdk/ModuleState;)Lcom/omnideck/sdk/capability/PlatformEvent$ModuleStateChanged;
+	public static synthetic fun copy-L-tXfMQ$default (Lcom/omnideck/sdk/capability/PlatformEvent$ModuleStateChanged;Ljava/lang/String;Lcom/omnideck/sdk/ModuleState;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/PlatformEvent$ModuleStateChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getModuleId-6zWiCZI ()Ljava/lang/String;
+	public fun getSchemaVersion ()I
+	public final fun getState ()Lcom/omnideck/sdk/ModuleState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/capability/PlatformEvent$ModuleStateChanged$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/PlatformEvent$ModuleStateChanged$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/capability/PlatformEvent$ModuleStateChanged;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/capability/PlatformEvent$ModuleStateChanged;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$ModuleStateChanged$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$PurchaseCompleted : com/omnideck/sdk/capability/PlatformEvent {
+	public static final field Companion Lcom/omnideck/sdk/capability/PlatformEvent$PurchaseCompleted$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-gBZwjLQ ()Ljava/lang/String;
+	public final fun copy-BJACWBk (Ljava/lang/String;)Lcom/omnideck/sdk/capability/PlatformEvent$PurchaseCompleted;
+	public static synthetic fun copy-BJACWBk$default (Lcom/omnideck/sdk/capability/PlatformEvent$PurchaseCompleted;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/PlatformEvent$PurchaseCompleted;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getSchemaVersion ()I
+	public final fun getSku-gBZwjLQ ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/capability/PlatformEvent$PurchaseCompleted$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/PlatformEvent$PurchaseCompleted$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/capability/PlatformEvent$PurchaseCompleted;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/capability/PlatformEvent$PurchaseCompleted;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$PurchaseCompleted$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$SessionChanged : com/omnideck/sdk/capability/PlatformEvent {
+	public static final field Companion Lcom/omnideck/sdk/capability/PlatformEvent$SessionChanged$Companion;
+	public fun <init> (ZLjava/lang/String;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (ZLjava/lang/String;)Lcom/omnideck/sdk/capability/PlatformEvent$SessionChanged;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/PlatformEvent$SessionChanged;ZLjava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/PlatformEvent$SessionChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getSchemaVersion ()I
+	public final fun getSignedIn ()Z
+	public final fun getUserIdHash ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/capability/PlatformEvent$SessionChanged$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/PlatformEvent$SessionChanged$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/capability/PlatformEvent$SessionChanged;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/capability/PlatformEvent$SessionChanged;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$SessionChanged$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$ThemeChanged : com/omnideck/sdk/capability/PlatformEvent {
+	public static final field Companion Lcom/omnideck/sdk/capability/PlatformEvent$ThemeChanged$Companion;
+	public fun <init> (ZZ)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun copy (ZZ)Lcom/omnideck/sdk/capability/PlatformEvent$ThemeChanged;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/PlatformEvent$ThemeChanged;ZZILjava/lang/Object;)Lcom/omnideck/sdk/capability/PlatformEvent$ThemeChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDarkMode ()Z
+	public final fun getDynamicColor ()Z
+	public fun getSchemaVersion ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/omnideck/sdk/capability/PlatformEvent$ThemeChanged$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/PlatformEvent$ThemeChanged$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/omnideck/sdk/capability/PlatformEvent$ThemeChanged;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/omnideck/sdk/capability/PlatformEvent$ThemeChanged;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/PlatformEvent$ThemeChanged$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/omnideck/sdk/capability/Principal {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/Set;
+	public final fun component5 ()Ljava/util/Set;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;)Lcom/omnideck/sdk/capability/Principal;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/Principal;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/Principal;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDisplayName ()Ljava/lang/String;
+	public final fun getEntitlements ()Ljava/util/Set;
+	public final fun getRoles ()Ljava/util/Set;
+	public final fun getSubjectId ()Ljava/lang/String;
+	public final fun getTenantId ()Ljava/lang/String;
+	public final fun hasRole (Ljava/lang/String;)Z
+	public fun hashCode ()I
+	public final fun isEntitledTo-BJACWBk (Ljava/lang/String;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/capability/SessionState {
+	public fun getPrincipalOrNull ()Lcom/omnideck/sdk/capability/Principal;
+}
+
+public final class com/omnideck/sdk/capability/SessionState$DefaultImpls {
+	public static fun getPrincipalOrNull (Lcom/omnideck/sdk/capability/SessionState;)Lcom/omnideck/sdk/capability/Principal;
+}
+
+public final class com/omnideck/sdk/capability/SessionState$Expired : com/omnideck/sdk/capability/SessionState {
+	public fun <init> (Lcom/omnideck/sdk/capability/Principal;)V
+	public final fun component1 ()Lcom/omnideck/sdk/capability/Principal;
+	public final fun copy (Lcom/omnideck/sdk/capability/Principal;)Lcom/omnideck/sdk/capability/SessionState$Expired;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/SessionState$Expired;Lcom/omnideck/sdk/capability/Principal;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/SessionState$Expired;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPrincipal ()Lcom/omnideck/sdk/capability/Principal;
+	public fun getPrincipalOrNull ()Lcom/omnideck/sdk/capability/Principal;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/SessionState$SignedIn : com/omnideck/sdk/capability/SessionState {
+	public fun <init> (Lcom/omnideck/sdk/capability/Principal;)V
+	public final fun component1 ()Lcom/omnideck/sdk/capability/Principal;
+	public final fun copy (Lcom/omnideck/sdk/capability/Principal;)Lcom/omnideck/sdk/capability/SessionState$SignedIn;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/SessionState$SignedIn;Lcom/omnideck/sdk/capability/Principal;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/SessionState$SignedIn;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPrincipal ()Lcom/omnideck/sdk/capability/Principal;
+	public fun getPrincipalOrNull ()Lcom/omnideck/sdk/capability/Principal;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/SessionState$SignedOut : com/omnideck/sdk/capability/SessionState {
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/SessionState$SignedOut;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getPrincipalOrNull ()Lcom/omnideck/sdk/capability/Principal;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/SessionState$Unknown : com/omnideck/sdk/capability/SessionState {
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/SessionState$Unknown;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getPrincipalOrNull ()Lcom/omnideck/sdk/capability/Principal;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/TelemetryKt {
+	public static final fun traced (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/String;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun traced$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/String;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/omnideck/sdk/capability/TelemetryScope {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-pcUv0HQ ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy--DJhiHw (Ljava/lang/String;Ljava/lang/String;)Lcom/omnideck/sdk/capability/TelemetryScope;
+	public static synthetic fun copy--DJhiHw$default (Lcom/omnideck/sdk/capability/TelemetryScope;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/TelemetryScope;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHostVersion ()Ljava/lang/String;
+	public final fun getModuleId-pcUv0HQ ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/capability/TelemetryService {
+	public abstract fun breadcrumb (Ljava/lang/String;Ljava/util/Map;)V
+	public static synthetic fun breadcrumb$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)V
+	public abstract fun event (Ljava/lang/String;Ljava/util/Map;)V
+	public static synthetic fun event$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)V
+	public abstract fun metric (Ljava/lang/String;DLjava/util/Map;)V
+	public static synthetic fun metric$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/String;DLjava/util/Map;ILjava/lang/Object;)V
+	public abstract fun recordError (Ljava/lang/Throwable;Ljava/lang/String;Z)V
+	public static synthetic fun recordError$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/Throwable;Ljava/lang/String;ZILjava/lang/Object;)V
+	public abstract fun startSpan (Ljava/lang/String;Ljava/util/Map;)Lcom/omnideck/sdk/capability/TelemetryService$Span;
+	public static synthetic fun startSpan$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/TelemetryService$Span;
+}
+
+public final class com/omnideck/sdk/capability/TelemetryService$DefaultImpls {
+	public static synthetic fun breadcrumb$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)V
+	public static synthetic fun event$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)V
+	public static synthetic fun metric$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/String;DLjava/util/Map;ILjava/lang/Object;)V
+	public static synthetic fun recordError$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/Throwable;Ljava/lang/String;ZILjava/lang/Object;)V
+	public static synthetic fun startSpan$default (Lcom/omnideck/sdk/capability/TelemetryService;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/TelemetryService$Span;
+}
+
+public abstract interface class com/omnideck/sdk/capability/TelemetryService$Span : java/lang/AutoCloseable {
+	public abstract fun close ()V
+	public abstract fun getTraceId ()Ljava/lang/String;
+	public abstract fun recordException (Ljava/lang/Throwable;)V
+	public abstract fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public abstract fun setStatus (ZLjava/lang/String;)V
+	public static synthetic fun setStatus$default (Lcom/omnideck/sdk/capability/TelemetryService$Span;ZLjava/lang/String;ILjava/lang/Object;)V
+}
+
+public final class com/omnideck/sdk/capability/TelemetryService$Span$DefaultImpls {
+	public static synthetic fun setStatus$default (Lcom/omnideck/sdk/capability/TelemetryService$Span;ZLjava/lang/String;ILjava/lang/Object;)V
+}
+

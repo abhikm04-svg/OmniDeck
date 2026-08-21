@@ -1,0 +1,83 @@
+# OmniDeck detekt configuration.
+# buildUponDefaultConfig = true, so this file only records deliberate deviations.
+
+build:
+  maxIssues: 0
+
+complexity:
+  LongMethod:
+    threshold: 60
+  LongParameterList:
+    functionThreshold: 8
+    constructorThreshold: 12   # DI constructors legitimately take many collaborators
+    ignoreAnnotated: ['Composable', 'Inject']
+  TooManyFunctions:
+    thresholdInClasses: 20
+    thresholdInFiles: 20
+    ignoreAnnotatedFunctions: ['Composable']
+  CyclomaticComplexMethod:
+    threshold: 18
+    ignoreAnnotated: ['Composable']
+
+style:
+  MagicNumber:
+    ignoreAnnotated: ['Composable', 'Preview']
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+  MaxLineLength:
+    maxLineLength: 120
+    excludes: ['**/test/**', '**/androidTest/**']
+  ForbiddenComment:
+    comments: ['FIXME:', 'STOPSHIP:']
+    # TODO is allowed but must reference a ticket — enforced by ForbiddenMethodCall below.
+  ReturnCount:
+    max: 4
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']
+  ForbiddenMethodCall:
+    active: true
+    methods:
+      # architecture.md §12.1 — logging goes through TelemetryService so it can be
+      # redacted, sampled and attributed to a module.
+      - reason: 'Use TelemetryService, not android.util.Log'
+        value: 'android.util.Log.v'
+      - reason: 'Use TelemetryService, not android.util.Log'
+        value: 'android.util.Log.d'
+      - reason: 'Use TelemetryService, not android.util.Log'
+        value: 'android.util.Log.i'
+      - reason: 'Use TelemetryService, not android.util.Log'
+        value: 'android.util.Log.w'
+      - reason: 'Use TelemetryService, not android.util.Log'
+        value: 'android.util.Log.e'
+      - reason: 'Use kotlinx.datetime.Clock via PlatformServices for testability'
+        value: 'java.lang.System.currentTimeMillis'
+
+exceptions:
+  TooGenericExceptionCaught:
+    excludes: ['**/kernel/**']   # the module loader must contain arbitrary failures
+  SwallowedException:
+    active: true
+
+coroutines:
+  GlobalCoroutineUsage:
+    active: true
+  InjectDispatcher:
+    active: true
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][_A-Za-z0-9]*'
+
+potential-bugs:
+  LateinitUsage:
+    active: true
+    # Hilt field-injects into framework-instantiated components (Activities,
+    # Application) because they have no usable constructor — lateinit is the
+    # only option there, not a code smell. ADR-002/003: there is exactly one
+    # of each in the whole app, so this stays a narrow, named exclusion rather
+    # than a broad pattern that could hide real misuse in module/business code.
+    excludes: ['**/test/**', '**/androidTest/**', '**/MainActivity.kt', '**/OmniDeckApplication.kt']
+  UnsafeCallOnNullableType:
+    active: true

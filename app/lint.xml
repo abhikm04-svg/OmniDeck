@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!--
+      ObsoleteSdkInt claims the -v26 qualifier is redundant because minSdk is 26.
+      For adaptive icons it is not: AAPT2 rejects <adaptive-icon> from a plain
+      `mipmap-anydpi` folder ("resource mipmap/ic_launcher not found"), and the
+      -v26 form is the layout every Android toolchain expects. Verified by trying
+      the suggested rename — it breaks resource linking in both variants.
+    -->
+    <issue id="ObsoleteSdkInt">
+        <ignore path="src/main/res/mipmap-anydpi-v26" />
+    </issue>
+</lint>

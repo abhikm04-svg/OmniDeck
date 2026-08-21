@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      The kernel implements NetworkService and NotificationService, so it declares
+      the permissions those need rather than relying on the Shell to remember. The
+      manifest merger rolls these into the host app.
+
+      POST_NOTIFICATIONS is still requested at runtime, contextually, via
+      PermissionBroker — never at startup (architecture.md §11.3).
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+</manifest>

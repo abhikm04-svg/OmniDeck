@@ -1,0 +1,23 @@
+# Normalise line endings so a Windows checkout and a Linux CI runner agree.
+* text=auto eol=lf
+
+# gradlew is executed by /bin/sh on the CI runner. CRLF here produces
+# "bad interpreter: No such file or directory" — a failure that only ever
+# reproduces on CI, never locally on Windows.
+gradlew text eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary — never touch.
+*.jar binary
+*.png binary
+*.jpg binary
+*.webp binary
+*.keystore binary
+*.jks binary
+
+# Generated API dumps: diffed by humans in review (ADR-004), so keep them
+# textual and normalised rather than letting platform endings churn them.
+*.api text eol=lf

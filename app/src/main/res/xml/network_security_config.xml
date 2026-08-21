@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  architecture.md §12.1.
+  - No cleartext traffic anywhere, in any build type.
+  - User-added CAs are not trusted, so a device-level MITM proxy cannot silently
+    intercept production traffic. Debug builds trust the debug overrides only,
+    which is what lets engineers use Charles/mitmproxy without weakening release.
+  - Certificate pinning is added in Phase 4 (OD-410) together with backup pins and
+    a rehearsed rotation runbook. Pinning without rotation drills bricks fleets.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

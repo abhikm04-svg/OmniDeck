@@ -1,0 +1,507 @@
+public final class com/omnideck/sdk/CapabilityNotGrantedException : java/lang/SecurityException {
+	public static final field $stable I
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCapabilityId-_CqwS-0 ()Ljava/lang/String;
+	public final fun getModuleId-6zWiCZI ()Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/CapabilityRegistry {
+	public abstract fun isAvailable-12heD1Y (Ljava/lang/String;)Z
+	public abstract fun register-s8xoLFc (Ljava/lang/String;Ljava/lang/Class;Lkotlin/jvm/functions/Function0;)V
+	public abstract fun resolve-DLNCxrE (Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
+}
+
+public abstract interface class com/omnideck/sdk/DestinationRegistry {
+	public fun degradedFallback (Lkotlin/jvm/functions/Function3;)V
+	public fun destination (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)V
+	public abstract fun destination (Ljava/lang/String;Lkotlin/jvm/functions/Function3;)V
+}
+
+public final class com/omnideck/sdk/DestinationRegistry$DefaultImpls {
+	public static fun degradedFallback (Lcom/omnideck/sdk/DestinationRegistry;Lkotlin/jvm/functions/Function3;)V
+	public static fun destination (Lcom/omnideck/sdk/DestinationRegistry;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)V
+}
+
+public abstract interface class com/omnideck/sdk/OmniModule {
+	public abstract fun getManifest ()Lcom/omnideck/sdk/ModuleManifest;
+	public abstract fun initialize (Lcom/omnideck/sdk/PlatformServices;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun purge (Lcom/omnideck/sdk/PurgeScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun registerCapabilities (Lcom/omnideck/sdk/CapabilityRegistry;)V
+	public abstract fun registerDestinations (Lcom/omnideck/sdk/DestinationRegistry;)V
+	public fun suspend (Lcom/omnideck/sdk/SuspendReason;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/omnideck/sdk/OmniModule$DefaultImpls {
+	public static fun purge (Lcom/omnideck/sdk/OmniModule;Lcom/omnideck/sdk/PurgeScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun registerCapabilities (Lcom/omnideck/sdk/OmniModule;Lcom/omnideck/sdk/CapabilityRegistry;)V
+	public static fun suspend (Lcom/omnideck/sdk/OmniModule;Lcom/omnideck/sdk/SuspendReason;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/omnideck/sdk/PlatformServices {
+	public abstract fun capability-DLNCxrE (Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
+	public abstract fun getAuth ()Lcom/omnideck/sdk/capability/AuthService;
+	public abstract fun getBilling ()Lcom/omnideck/sdk/capability/BillingService;
+	public abstract fun getConsent ()Lcom/omnideck/sdk/capability/ConsentService;
+	public abstract fun getEvents ()Lcom/omnideck/sdk/capability/EventBus;
+	public abstract fun getFlags ()Lcom/omnideck/sdk/capability/FeatureFlagService;
+	public abstract fun getLocale ()Lcom/omnideck/sdk/capability/LocaleService;
+	public abstract fun getMedia ()Lcom/omnideck/sdk/capability/MediaService;
+	public abstract fun getModuleId-6zWiCZI ()Ljava/lang/String;
+	public abstract fun getNetwork ()Lcom/omnideck/sdk/capability/NetworkService;
+	public abstract fun getNotifications ()Lcom/omnideck/sdk/capability/NotificationService;
+	public abstract fun getPermissions ()Lcom/omnideck/sdk/capability/PermissionBroker;
+	public abstract fun getRouter ()Lcom/omnideck/sdk/capability/Router;
+	public abstract fun getSdkVersion ()Lcom/omnideck/sdk/SemVer;
+	public abstract fun getSecureStore ()Lcom/omnideck/sdk/capability/SecureStore;
+	public abstract fun getStorage ()Lcom/omnideck/sdk/capability/StorageService;
+	public abstract fun getTelemetry ()Lcom/omnideck/sdk/capability/TelemetryService;
+	public abstract fun getWork ()Lcom/omnideck/sdk/capability/WorkScheduler;
+}
+
+public abstract interface class com/omnideck/sdk/capability/BillingService {
+	public abstract fun getEntitlements ()Lkotlinx/coroutines/flow/Flow;
+	public abstract fun products (Ljava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun purchase-r612SMw (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun refresh (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/omnideck/sdk/capability/BillingService$Product {
+	public static final field $stable I
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-gBZwjLQ ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()J
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Z
+	public final fun copy-zjn3dK4 (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;Z)Lcom/omnideck/sdk/capability/BillingService$Product;
+	public static synthetic fun copy-zjn3dK4$default (Lcom/omnideck/sdk/capability/BillingService$Product;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;ZILjava/lang/Object;)Lcom/omnideck/sdk/capability/BillingService$Product;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrencyCode ()Ljava/lang/String;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getFormattedPrice ()Ljava/lang/String;
+	public final fun getPriceMinorUnits ()J
+	public final fun getSku-gBZwjLQ ()Ljava/lang/String;
+	public final fun getSubscription ()Z
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/capability/BillingService$PurchaseResult {
+}
+
+public final class com/omnideck/sdk/capability/BillingService$PurchaseResult$Cancelled : com/omnideck/sdk/capability/BillingService$PurchaseResult {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/BillingService$PurchaseResult$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/BillingService$PurchaseResult$Failed : com/omnideck/sdk/capability/BillingService$PurchaseResult {
+	public static final field $stable I
+	public fun <init> (ILjava/lang/String;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (ILjava/lang/String;)Lcom/omnideck/sdk/capability/BillingService$PurchaseResult$Failed;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/BillingService$PurchaseResult$Failed;ILjava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/BillingService$PurchaseResult$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()I
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/BillingService$PurchaseResult$Pending : com/omnideck/sdk/capability/BillingService$PurchaseResult {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/BillingService$PurchaseResult$Pending;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/BillingService$PurchaseResult$Purchased : com/omnideck/sdk/capability/BillingService$PurchaseResult {
+	public static final field $stable I
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-gBZwjLQ ()Ljava/lang/String;
+	public final fun copy-BJACWBk (Ljava/lang/String;)Lcom/omnideck/sdk/capability/BillingService$PurchaseResult$Purchased;
+	public static synthetic fun copy-BJACWBk$default (Lcom/omnideck/sdk/capability/BillingService$PurchaseResult$Purchased;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/BillingService$PurchaseResult$Purchased;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSku-gBZwjLQ ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/Connectivity {
+	public static final field $stable I
+	public fun <init> (ZZLcom/omnideck/sdk/capability/Connectivity$Kind;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Lcom/omnideck/sdk/capability/Connectivity$Kind;
+	public final fun copy (ZZLcom/omnideck/sdk/capability/Connectivity$Kind;)Lcom/omnideck/sdk/capability/Connectivity;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/Connectivity;ZZLcom/omnideck/sdk/capability/Connectivity$Kind;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/Connectivity;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKind ()Lcom/omnideck/sdk/capability/Connectivity$Kind;
+	public final fun getMetered ()Z
+	public final fun getOnline ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/Connectivity$Kind : java/lang/Enum {
+	public static final field CELLULAR Lcom/omnideck/sdk/capability/Connectivity$Kind;
+	public static final field ETHERNET Lcom/omnideck/sdk/capability/Connectivity$Kind;
+	public static final field NONE Lcom/omnideck/sdk/capability/Connectivity$Kind;
+	public static final field OTHER Lcom/omnideck/sdk/capability/Connectivity$Kind;
+	public static final field WIFI Lcom/omnideck/sdk/capability/Connectivity$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/capability/Connectivity$Kind;
+	public static fun values ()[Lcom/omnideck/sdk/capability/Connectivity$Kind;
+}
+
+public final class com/omnideck/sdk/capability/HttpConfig {
+	public static final field $stable I
+	public synthetic fun <init> (JJJZLcom/omnideck/sdk/capability/RetryPolicy;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JJJZLcom/omnideck/sdk/capability/RetryPolicy;Ljava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-UwyO8pc ()J
+	public final fun component2-UwyO8pc ()J
+	public final fun component3-UwyO8pc ()J
+	public final fun component4 ()Z
+	public final fun component5 ()Lcom/omnideck/sdk/capability/RetryPolicy;
+	public final fun component6 ()Ljava/util/List;
+	public final fun copy-AN_R0Go (JJJZLcom/omnideck/sdk/capability/RetryPolicy;Ljava/util/List;)Lcom/omnideck/sdk/capability/HttpConfig;
+	public static synthetic fun copy-AN_R0Go$default (Lcom/omnideck/sdk/capability/HttpConfig;JJJZLcom/omnideck/sdk/capability/RetryPolicy;Ljava/util/List;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/HttpConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAuthenticated ()Z
+	public final fun getConnectTimeout-UwyO8pc ()J
+	public final fun getInterceptors ()Ljava/util/List;
+	public final fun getReadTimeout-UwyO8pc ()J
+	public final fun getRetryPolicy ()Lcom/omnideck/sdk/capability/RetryPolicy;
+	public final fun getWriteTimeout-UwyO8pc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/capability/MediaService {
+	public abstract fun captureImage (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun importToModuleStorage (Landroid/net/Uri;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun pickDocument (Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun pickImage (ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun pickImage$default (Lcom/omnideck/sdk/capability/MediaService;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/omnideck/sdk/capability/MediaService$DefaultImpls {
+	public static synthetic fun pickImage$default (Lcom/omnideck/sdk/capability/MediaService;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class com/omnideck/sdk/capability/NavResult {
+}
+
+public final class com/omnideck/sdk/capability/NavResult$AcquisitionAborted : com/omnideck/sdk/capability/NavResult {
+	public static final field $stable I
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-6zWiCZI ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy-L-tXfMQ (Ljava/lang/String;Ljava/lang/String;)Lcom/omnideck/sdk/capability/NavResult$AcquisitionAborted;
+	public static synthetic fun copy-L-tXfMQ$default (Lcom/omnideck/sdk/capability/NavResult$AcquisitionAborted;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/NavResult$AcquisitionAborted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getModuleId-6zWiCZI ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/NavResult$Navigated : com/omnideck/sdk/capability/NavResult {
+	public static final field $stable I
+	public fun <init> (Lcom/omnideck/sdk/Route;)V
+	public final fun component1 ()Lcom/omnideck/sdk/Route;
+	public final fun copy (Lcom/omnideck/sdk/Route;)Lcom/omnideck/sdk/capability/NavResult$Navigated;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/NavResult$Navigated;Lcom/omnideck/sdk/Route;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/NavResult$Navigated;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRoute ()Lcom/omnideck/sdk/Route;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/NavResult$NavigatedAfterInstall : com/omnideck/sdk/capability/NavResult {
+	public static final field $stable I
+	public synthetic fun <init> (Lcom/omnideck/sdk/Route;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/omnideck/sdk/Route;
+	public final fun component2-6zWiCZI ()Ljava/lang/String;
+	public final fun copy-jPHehlo (Lcom/omnideck/sdk/Route;Ljava/lang/String;)Lcom/omnideck/sdk/capability/NavResult$NavigatedAfterInstall;
+	public static synthetic fun copy-jPHehlo$default (Lcom/omnideck/sdk/capability/NavResult$NavigatedAfterInstall;Lcom/omnideck/sdk/Route;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/NavResult$NavigatedAfterInstall;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getModuleId-6zWiCZI ()Ljava/lang/String;
+	public final fun getRoute ()Lcom/omnideck/sdk/Route;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/NavResult$Unavailable : com/omnideck/sdk/capability/NavResult {
+	public static final field $stable I
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-6zWiCZI ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy-L-tXfMQ (Ljava/lang/String;Ljava/lang/String;)Lcom/omnideck/sdk/capability/NavResult$Unavailable;
+	public static synthetic fun copy-L-tXfMQ$default (Lcom/omnideck/sdk/capability/NavResult$Unavailable;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/NavResult$Unavailable;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getModuleId-6zWiCZI ()Ljava/lang/String;
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/NavResult$Unhandled : com/omnideck/sdk/capability/NavResult {
+	public static final field $stable I
+	public fun <init> (Lcom/omnideck/sdk/Route;)V
+	public final fun component1 ()Lcom/omnideck/sdk/Route;
+	public final fun copy (Lcom/omnideck/sdk/Route;)Lcom/omnideck/sdk/capability/NavResult$Unhandled;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/NavResult$Unhandled;Lcom/omnideck/sdk/Route;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/NavResult$Unhandled;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRoute ()Lcom/omnideck/sdk/Route;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/capability/NavResultValue {
+}
+
+public final class com/omnideck/sdk/capability/NavResultValue$Cancelled : com/omnideck/sdk/capability/NavResultValue {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/omnideck/sdk/capability/NavResultValue$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/NavResultValue$Failed : com/omnideck/sdk/capability/NavResultValue {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/omnideck/sdk/capability/NavResultValue$Failed;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/NavResultValue$Failed;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/NavResultValue$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/NavResultValue$Success : com/omnideck/sdk/capability/NavResultValue {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lcom/omnideck/sdk/capability/NavResultValue$Success;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/NavResultValue$Success;Ljava/lang/Object;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/NavResultValue$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/capability/NetworkService {
+	public abstract fun client (Lcom/omnideck/sdk/capability/HttpConfig;)Lokhttp3/OkHttpClient;
+	public static synthetic fun client$default (Lcom/omnideck/sdk/capability/NetworkService;Lcom/omnideck/sdk/capability/HttpConfig;ILjava/lang/Object;)Lokhttp3/OkHttpClient;
+	public abstract fun getConnectivity ()Lkotlinx/coroutines/flow/Flow;
+	public abstract fun isOnline ()Z
+	public abstract fun retrofit (Ljava/lang/String;Lcom/omnideck/sdk/capability/HttpConfig;)Lretrofit2/Retrofit;
+	public static synthetic fun retrofit$default (Lcom/omnideck/sdk/capability/NetworkService;Ljava/lang/String;Lcom/omnideck/sdk/capability/HttpConfig;ILjava/lang/Object;)Lretrofit2/Retrofit;
+}
+
+public final class com/omnideck/sdk/capability/NetworkService$DefaultImpls {
+	public static synthetic fun client$default (Lcom/omnideck/sdk/capability/NetworkService;Lcom/omnideck/sdk/capability/HttpConfig;ILjava/lang/Object;)Lokhttp3/OkHttpClient;
+	public static synthetic fun retrofit$default (Lcom/omnideck/sdk/capability/NetworkService;Ljava/lang/String;Lcom/omnideck/sdk/capability/HttpConfig;ILjava/lang/Object;)Lretrofit2/Retrofit;
+}
+
+public abstract interface class com/omnideck/sdk/capability/NotificationService {
+	public abstract fun areNotificationsEnabled ()Z
+	public abstract fun cancel (ILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun cancelAll (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun ensurePermission (Lcom/omnideck/sdk/capability/PermissionBroker$Rationale;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun post (Lcom/omnideck/sdk/capability/NotificationService$NotificationSpec;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/omnideck/sdk/capability/NotificationService$Importance : java/lang/Enum {
+	public static final field DEFAULT Lcom/omnideck/sdk/capability/NotificationService$Importance;
+	public static final field HIGH Lcom/omnideck/sdk/capability/NotificationService$Importance;
+	public static final field LOW Lcom/omnideck/sdk/capability/NotificationService$Importance;
+	public static final field MIN Lcom/omnideck/sdk/capability/NotificationService$Importance;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/capability/NotificationService$Importance;
+	public static fun values ()[Lcom/omnideck/sdk/capability/NotificationService$Importance;
+}
+
+public final class com/omnideck/sdk/capability/NotificationService$NotificationSpec {
+	public static final field $stable I
+	public fun <init> (ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/omnideck/sdk/Route;Lcom/omnideck/sdk/capability/NotificationService$Importance;Z)V
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/omnideck/sdk/Route;Lcom/omnideck/sdk/capability/NotificationService$Importance;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lcom/omnideck/sdk/Route;
+	public final fun component6 ()Lcom/omnideck/sdk/capability/NotificationService$Importance;
+	public final fun component7 ()Z
+	public final fun copy (ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/omnideck/sdk/Route;Lcom/omnideck/sdk/capability/NotificationService$Importance;Z)Lcom/omnideck/sdk/capability/NotificationService$NotificationSpec;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/NotificationService$NotificationSpec;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/omnideck/sdk/Route;Lcom/omnideck/sdk/capability/NotificationService$Importance;ZILjava/lang/Object;)Lcom/omnideck/sdk/capability/NotificationService$NotificationSpec;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBody ()Ljava/lang/String;
+	public final fun getChannelId ()Ljava/lang/String;
+	public final fun getId ()I
+	public final fun getImportance ()Lcom/omnideck/sdk/capability/NotificationService$Importance;
+	public final fun getOngoing ()Z
+	public final fun getRoute ()Lcom/omnideck/sdk/Route;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/omnideck/sdk/capability/PermissionBroker {
+	public abstract fun ensure (Ljava/lang/String;Lcom/omnideck/sdk/capability/PermissionBroker$Rationale;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun isGranted (Ljava/lang/String;)Z
+	public abstract fun openSettings ()V
+}
+
+public final class com/omnideck/sdk/capability/PermissionBroker$PermissionResult : java/lang/Enum {
+	public static final field DENIED Lcom/omnideck/sdk/capability/PermissionBroker$PermissionResult;
+	public static final field GRANTED Lcom/omnideck/sdk/capability/PermissionBroker$PermissionResult;
+	public static final field NOT_DECLARED Lcom/omnideck/sdk/capability/PermissionBroker$PermissionResult;
+	public static final field PERMANENTLY_DENIED Lcom/omnideck/sdk/capability/PermissionBroker$PermissionResult;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/capability/PermissionBroker$PermissionResult;
+	public static fun values ()[Lcom/omnideck/sdk/capability/PermissionBroker$PermissionResult;
+}
+
+public final class com/omnideck/sdk/capability/PermissionBroker$Rationale {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/omnideck/sdk/capability/PermissionBroker$Rationale;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/PermissionBroker$Rationale;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/PermissionBroker$Rationale;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getPurpose ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/RetryPolicy {
+	public static final field $stable I
+	public static final field Companion Lcom/omnideck/sdk/capability/RetryPolicy$Companion;
+	public synthetic fun <init> (IJJLjava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2-UwyO8pc ()J
+	public final fun component3-UwyO8pc ()J
+	public final fun component4 ()Ljava/util/Set;
+	public final fun copy-vLdBGDU (IJJLjava/util/Set;)Lcom/omnideck/sdk/capability/RetryPolicy;
+	public static synthetic fun copy-vLdBGDU$default (Lcom/omnideck/sdk/capability/RetryPolicy;IJJLjava/util/Set;ILjava/lang/Object;)Lcom/omnideck/sdk/capability/RetryPolicy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInitialBackoff-UwyO8pc ()J
+	public final fun getMaxAttempts ()I
+	public final fun getMaxBackoff-UwyO8pc ()J
+	public final fun getRetryOn ()Ljava/util/Set;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/RetryPolicy$Companion {
+	public final fun getDefault ()Lcom/omnideck/sdk/capability/RetryPolicy;
+	public final fun getNone ()Lcom/omnideck/sdk/capability/RetryPolicy;
+}
+
+public abstract interface class com/omnideck/sdk/capability/Router {
+	public abstract fun back ()Z
+	public abstract fun canHandle (Lcom/omnideck/sdk/Route;)Z
+	public abstract fun navigate (Lcom/omnideck/sdk/Route;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun navigateForResult (Lcom/omnideck/sdk/Route;Ljava/lang/Class;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun setResult-nyBJtcQ (Ljava/lang/String;Ljava/lang/Object;)V
+}
+
+public abstract interface class com/omnideck/sdk/capability/SecureStore {
+	public abstract fun contains (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun delete (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun get (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getBiometricGated (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun getBiometricGated$default (Lcom/omnideck/sdk/capability/SecureStore;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun put (Ljava/lang/String;[BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun putBiometricGated (Ljava/lang/String;[BILkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun putBiometricGated$default (Lcom/omnideck/sdk/capability/SecureStore;Ljava/lang/String;[BILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/omnideck/sdk/capability/SecureStore$DefaultImpls {
+	public static synthetic fun getBiometricGated$default (Lcom/omnideck/sdk/capability/SecureStore;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun putBiometricGated$default (Lcom/omnideck/sdk/capability/SecureStore;Ljava/lang/String;[BILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/omnideck/sdk/capability/StorageKt {
+	public static final fun getString (Lcom/omnideck/sdk/capability/SecureStore;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun putString (Lcom/omnideck/sdk/capability/SecureStore;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/omnideck/sdk/capability/StorageService {
+	public abstract fun cacheDir ()Ljava/io/File;
+	public abstract fun clear (Lcom/omnideck/sdk/PurgeScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun database (Ljava/lang/String;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;)Landroidx/room/RoomDatabase;
+	public static synthetic fun database$default (Lcom/omnideck/sdk/capability/StorageService;Ljava/lang/String;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/room/RoomDatabase;
+	public abstract fun filesDir ()Ljava/io/File;
+	public abstract fun preferences (Ljava/lang/String;)Landroidx/datastore/core/DataStore;
+	public static synthetic fun preferences$default (Lcom/omnideck/sdk/capability/StorageService;Ljava/lang/String;ILjava/lang/Object;)Landroidx/datastore/core/DataStore;
+	public abstract fun usageBytes (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/omnideck/sdk/capability/StorageService$DefaultImpls {
+	public static synthetic fun database$default (Lcom/omnideck/sdk/capability/StorageService;Ljava/lang/String;Ljava/lang/Class;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/room/RoomDatabase;
+	public static synthetic fun preferences$default (Lcom/omnideck/sdk/capability/StorageService;Ljava/lang/String;ILjava/lang/Object;)Landroidx/datastore/core/DataStore;
+}
+
+public abstract interface class com/omnideck/sdk/capability/WorkScheduler {
+	public abstract fun cancel (Ljava/lang/String;)V
+	public abstract fun cancelAll ()V
+	public abstract fun enqueue (Lcom/omnideck/sdk/capability/WorkScheduler$WorkSpec;)Ljava/lang/String;
+	public abstract fun enqueuePeriodic (Lcom/omnideck/sdk/capability/WorkScheduler$WorkSpec;Ljava/time/Duration;)Ljava/lang/String;
+	public abstract fun status (Ljava/lang/String;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class com/omnideck/sdk/capability/WorkScheduler$WorkSpec {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;Ljava/lang/Class;Ljava/util/Map;ZZZLjava/time/Duration;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Class;Ljava/util/Map;ZZZLjava/time/Duration;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Class;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()Z
+	public final fun component7 ()Ljava/time/Duration;
+	public final fun component8 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/Class;Ljava/util/Map;ZZZLjava/time/Duration;Z)Lcom/omnideck/sdk/capability/WorkScheduler$WorkSpec;
+	public static synthetic fun copy$default (Lcom/omnideck/sdk/capability/WorkScheduler$WorkSpec;Ljava/lang/String;Ljava/lang/Class;Ljava/util/Map;ZZZLjava/time/Duration;ZILjava/lang/Object;)Lcom/omnideck/sdk/capability/WorkScheduler$WorkSpec;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExpedited ()Z
+	public final fun getInitialDelay ()Ljava/time/Duration;
+	public final fun getInput ()Ljava/util/Map;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getRequiresCharging ()Z
+	public final fun getRequiresNetwork ()Z
+	public final fun getRequiresUnmetered ()Z
+	public final fun getWorker ()Ljava/lang/Class;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/capability/WorkScheduler$WorkStatus : java/lang/Enum {
+	public static final field BLOCKED Lcom/omnideck/sdk/capability/WorkScheduler$WorkStatus;
+	public static final field CANCELLED Lcom/omnideck/sdk/capability/WorkScheduler$WorkStatus;
+	public static final field ENQUEUED Lcom/omnideck/sdk/capability/WorkScheduler$WorkStatus;
+	public static final field FAILED Lcom/omnideck/sdk/capability/WorkScheduler$WorkStatus;
+	public static final field RUNNING Lcom/omnideck/sdk/capability/WorkScheduler$WorkStatus;
+	public static final field SUCCEEDED Lcom/omnideck/sdk/capability/WorkScheduler$WorkStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/omnideck/sdk/capability/WorkScheduler$WorkStatus;
+	public static fun values ()[Lcom/omnideck/sdk/capability/WorkScheduler$WorkStatus;
+}
+

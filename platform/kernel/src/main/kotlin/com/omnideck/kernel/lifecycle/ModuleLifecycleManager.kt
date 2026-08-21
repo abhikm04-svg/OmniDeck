@@ -1,0 +1,301 @@
+package com.omnideck.kernel.lifecycle
+
+import com.omnideck.core.DispatcherProvider
+import com.omnideck.kernel.loader.ModuleDescriptor
+import com.omnideck.kernel.loader.ModuleDescriptorSource
+import com.omnideck.kernel.loader.ModuleProvider
+import com.omnideck.kernel.registry.CapabilityRegistryImpl
+import com.omnideck.kernel.router.MutableDestinationRegistry
+import com.omnideck.kernel.services.ModuleScopedServicesFactory
+import com.omnideck.sdk.CapabilityId
+import com.omnideck.sdk.InstallProgress
+import com.omnideck.sdk.ModuleId
+import com.omnideck.sdk.ModuleInitResult
+import com.omnideck.sdk.ModuleManifest
+import com.omnideck.sdk.ModuleState
+import com.omnideck.sdk.OmniModule
+import com.omnideck.sdk.PurgeScope
+import com.omnideck.sdk.SemVer
+import com.omnideck.sdk.SuspendReason
+import com.omnideck.sdk.capability.EventBus
+import com.omnideck.sdk.capability.FeatureFlagService
+import com.omnideck.sdk.capability.PlatformEvent
+import com.omnideck.sdk.capability.TelemetryService
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/** Everything the Shell knows about one module at runtime. */
+data class ModuleRuntime(
+    val descriptor: ModuleDescriptor,
+    val state: ModuleState,
+    val manifest: ModuleManifest? = null,
+    val reason: String? = null,
+    val failureCount: Int = 0,
+)
+
+/** Host identity, needed for the compatibility gate. */
+data class HostInfo(val sdkVersion: SemVer, val versionCode: Int)
+
+/**
+ * The module state machine of architecture.md §7.1.
+ *
+ * This class is the reason a misbehaving module cannot take the platform down. It
+ * owns three safety properties:
+ *
+ *  - **Compatibility gating** — a module outside its declared `sdkRange` is never
+ *    initialised, so version skew produces a clear message instead of a
+ *    `NoSuchMethodError` deep inside a user journey.
+ *  - **Capability gating** — a module whose required capabilities are unavailable
+ *    fails fast and loud at load, not lazily at first use.
+ *  - **Quarantine** — repeated initialisation failures, or a server kill switch,
+ *    move a module to a contained, non-interactive state with its scheduled work
+ *    cancelled and an incident raised against its owning team (QA-6, QA-9).
+ */
+@Singleton
+class ModuleLifecycleManager @Inject constructor(
+    private val descriptorSource: ModuleDescriptorSource,
+    private val providers: Set<@JvmSuppressWildcards ModuleProvider>,
+    private val servicesFactory: ModuleScopedServicesFactory,
+    private val destinations: MutableDestinationRegistry,
+    private val capabilities: CapabilityRegistryImpl,
+    private val telemetry: TelemetryService,
+    private val flags: FeatureFlagService,
+    private val events: EventBus,
+    private val hostInfo: HostInfo,
+    private val dispatchers: DispatcherProvider,
+) {
+
+    private val _modules = MutableStateFlow<Map<ModuleId, ModuleRuntime>>(emptyMap())
+    val modules: StateFlow<Map<ModuleId, ModuleRuntime>> = _modules.asStateFlow()
+
+    private val instances = ConcurrentHashMap<ModuleId, OmniModule>()
+    private val locks = ConcurrentHashMap<ModuleId, Mutex>()
+
+    /** Reads descriptors and seeds the state map. Cheap: no module code runs here. */
+    suspend fun discover() {
+        val discovered = descriptorSource.descriptors()
+        telemetry.event("module_discovery", mapOf("count" to discovered.size))
+
+        _modules.value = discovered.associate { descriptor ->
+            val provider = providerFor(descriptor)
+            val installed = provider?.isInstalled(descriptor.id) == true
+            descriptor.id to ModuleRuntime(
+                descriptor = descriptor,
+                state = when {
+                    provider == null -> ModuleState.FAILED
+                    isKilled(descriptor.id) -> ModuleState.QUARANTINED
+                    installed -> ModuleState.INSTALLED
+                    else -> ModuleState.ADVERTISED
+                },
+                reason = if (provider == null) "No provider for ${descriptor.delivery}" else null,
+            )
+        }
+    }
+
+    /** Downloads a module that is not present yet. Progress drives the Catalog UI. */
+    fun install(id: ModuleId): Flow<InstallProgress> {
+        val runtime = requireNotNull(_modules.value[id]) { "Unknown module $id" }
+        val provider = requireNotNull(providerFor(runtime.descriptor)) { "No provider for $id" }
+        update(id) { it.copy(state = ModuleState.INSTALLING) }
+
+        return provider.install(id).onEach { progress ->
+            when (progress) {
+                is InstallProgress.Installed -> update(id) { it.copy(state = ModuleState.INSTALLED) }
+                is InstallProgress.Canceled -> update(id) { it.copy(state = ModuleState.ADVERTISED) }
+                is InstallProgress.Failed -> update(id) {
+                    it.copy(state = ModuleState.ADVERTISED, reason = progress.message)
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    /**
+     * Brings a module to [ModuleState.ACTIVE], loading and initialising it if needed.
+     * Idempotent and safe to call from the UI on every navigation.
+     */
+    @Suppress("ReturnCount")
+    suspend fun activate(id: ModuleId): ModuleRuntime = lockFor(id).withLock {
+        val current = _modules.value[id] ?: error("Unknown module $id")
+
+        if (current.state.isUsable) return current
+        if (current.state == ModuleState.QUARANTINED) return current
+        if (isKilled(id)) return quarantine(id, "Disabled by the OmniDeck team.")
+
+        val provider = providerFor(current.descriptor)
+            ?: return update(id) { it.copy(state = ModuleState.FAILED, reason = "No provider") }
+
+        if (!provider.isInstalled(id)) {
+            return update(id) { it.copy(state = ModuleState.ADVERTISED) }
+        }
+
+        update(id) { it.copy(state = ModuleState.INITIALIZING) }
+
+        return telemetry.startSpan("module.activate", mapOf("module.id" to id.value)).use { span ->
+            try {
+                val module = instances.getOrPut(id) { provider.load(current.descriptor) }
+                val manifest = module.manifest
+
+                compatibilityFailure(manifest)?.let { reason ->
+                    span.setStatus(ok = false, description = reason)
+                    return@use update(id) {
+                        it.copy(state = ModuleState.GATED, manifest = manifest, reason = reason)
+                    }
+                }
+
+                val services = servicesFactory.create(manifest)
+                val result = withContext(dispatchers.default) { module.initialize(services) }
+
+                when (result) {
+                    is ModuleInitResult.Ready, is ModuleInitResult.Degraded -> {
+                        module.registerDestinations(destinations.scopedTo(id))
+                        module.registerCapabilities(capabilities.scopedTo(id))
+                        val state = if (result is ModuleInitResult.Ready) {
+                            ModuleState.ACTIVE
+                        } else {
+                            ModuleState.DEGRADED
+                        }
+                        span.setStatus(ok = true)
+                        publishState(id, state)
+                        update(id) {
+                            it.copy(
+                                state = state,
+                                manifest = manifest,
+                                failureCount = 0,
+                                reason = (result as? ModuleInitResult.Degraded)?.reason,
+                            )
+                        }
+                    }
+
+                    is ModuleInitResult.Failed -> {
+                        span.recordException(result.error)
+                        telemetry.recordError(result.error, "module_init_failed:${id.value}")
+                        onInitFailure(id, manifest, result)
+                    }
+                }
+            } catch (t: Throwable) {
+                // A module throwing from initialize() is a contract violation. Contain
+                // it here — it must never propagate into the Shell's composition.
+                telemetry.recordError(t, "module_init_threw:${id.value}")
+                span.recordException(t)
+                onInitFailure(id, null, ModuleInitResult.Failed(t, retryable = false))
+            }
+        }
+    }
+
+    suspend fun suspendModule(id: ModuleId, reason: SuspendReason) {
+        instances[id]?.let { module ->
+            runCatching { module.suspend(reason) }
+                .onFailure { telemetry.recordError(it, "module_suspend_failed:${id.value}") }
+        }
+        update(id) { if (it.state.isUsable) it.copy(state = ModuleState.SUSPENDED) else it }
+    }
+
+    /**
+     * Erases module-owned data. Because storage is structurally isolated (ADR-005),
+     * this is deterministic — which is what makes GDPR/DPDP erasure testable.
+     */
+    suspend fun purge(id: ModuleId, scope: PurgeScope) {
+        update(id) { it.copy(state = ModuleState.PURGING) }
+        instances[id]?.let { module ->
+            runCatching { module.purge(scope) }
+                .onFailure { telemetry.recordError(it, "module_purge_failed:${id.value}") }
+        }
+        servicesFactory.purge(id, scope)
+        events.publish(PlatformEvent.DataPurged(id, scope))
+
+        if (scope == PurgeScope.ALL) {
+            instances.remove(id)
+            destinations.removeAll(id)
+            capabilities.removeAll(id)
+            providerFor(_modules.value.getValue(id).descriptor)?.uninstall(id)
+            update(id) { it.copy(state = ModuleState.ADVERTISED, manifest = null) }
+        } else {
+            update(id) { it.copy(state = ModuleState.INSTALLED) }
+        }
+    }
+
+    /** Forces a module out of service. Callable from a remote kill switch (< 5 min, QA-9). */
+    suspend fun quarantine(id: ModuleId, reason: String): ModuleRuntime {
+        telemetry.event("module_quarantined", mapOf("module.id" to id.value, "reason" to reason))
+        instances[id]?.let { runCatching { it.suspend(SuspendReason.KILL_SWITCH) } }
+        servicesFactory.cancelWork(id)
+        destinations.removeAll(id)
+        capabilities.removeAll(id)
+        publishState(id, ModuleState.QUARANTINED)
+        return update(id) { it.copy(state = ModuleState.QUARANTINED, reason = reason) }
+    }
+
+    fun stateOf(id: ModuleId): ModuleState = _modules.value[id]?.state ?: ModuleState.ADVERTISED
+
+    fun manifestOf(id: ModuleId): ModuleManifest? = _modules.value[id]?.manifest
+
+    // -----------------------------------------------------------------------
+
+    private fun onInitFailure(
+        id: ModuleId,
+        manifest: ModuleManifest?,
+        result: ModuleInitResult.Failed,
+    ): ModuleRuntime {
+        val failures = (_modules.value[id]?.failureCount ?: 0) + 1
+        val message = result.error.message ?: "Initialisation failed"
+
+        return if (!result.retryable || failures >= QUARANTINE_THRESHOLD) {
+            publishState(id, ModuleState.QUARANTINED)
+            update(id) {
+                it.copy(
+                    state = ModuleState.QUARANTINED,
+                    manifest = manifest,
+                    reason = message,
+                    failureCount = failures,
+                )
+            }
+        } else {
+            update(id) {
+                it.copy(state = ModuleState.INSTALLED, manifest = manifest, reason = message, failureCount = failures)
+            }
+        }
+    }
+
+    private fun compatibilityFailure(manifest: ModuleManifest): String? {
+        if (!manifest.isCompatibleWith(hostInfo.sdkVersion, hostInfo.versionCode)) {
+            return "Needs a newer version of OmniDeck (requires SDK ${manifest.sdkRange}, " +
+                "host is ${hostInfo.sdkVersion})."
+        }
+        val missing = manifest.unsatisfiedBy(CapabilityId.KERNEL_PROVIDED + capabilities.available())
+        if (missing.isNotEmpty()) {
+            return "Unavailable capabilities: ${missing.joinToString { it.value }}."
+        }
+        return null
+    }
+
+    private fun isKilled(id: ModuleId): Boolean = !flags.boolean("module.${id.value}.enabled", default = true)
+
+    private fun providerFor(descriptor: ModuleDescriptor): ModuleProvider? =
+        providers.firstOrNull { it.handles == descriptor.delivery }
+
+    private fun lockFor(id: ModuleId): Mutex = locks.getOrPut(id) { Mutex() }
+
+    private fun publishState(id: ModuleId, state: ModuleState) =
+        events.publish(PlatformEvent.ModuleStateChanged(id, state))
+
+    private inline fun update(id: ModuleId, transform: (ModuleRuntime) -> ModuleRuntime): ModuleRuntime {
+        val updated = transform(_modules.value.getValue(id))
+        _modules.value = _modules.value + (id to updated)
+        return updated
+    }
+
+    private companion object {
+        /** Three failures in a session and the module is contained (architecture.md §7.1). */
+        const val QUARANTINE_THRESHOLD = 3
+    }
+}

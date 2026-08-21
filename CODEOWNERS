@@ -1,0 +1,39 @@
+# OmniDeck code ownership.
+#
+# Mirrors the RACI table in implementation_plan.md §3. Solo/small-team today —
+# every path defaults to @abhikm04-svg — but the structure is in place so
+# ownership can be split by area as the team grows, without restructuring
+# this file.
+#
+# Order matters: later patterns win. Keep the catch-all first.
+
+*                               @abhikm04-svg
+
+# Platform contract — changes here follow the "SDK contract change" RACI row.
+/platform/omnideck-sdk/        @abhikm04-svg
+/platform/omnideck-sdk-core/   @abhikm04-svg
+/platform/kernel/              @abhikm04-svg
+/platform/testing/             @abhikm04-svg
+
+# Design system.
+/platform/design-system/       @abhikm04-svg
+
+# Build system — convention plugins are the architecture's guardrails.
+# Changes here should get extra scrutiny (they can silently loosen a rule).
+/build-logic/                  @abhikm04-svg
+/gradle/libs.versions.toml      @abhikm04-svg
+/config/                       @abhikm04-svg
+
+# Shell.
+/app/                          @abhikm04-svg
+
+# Modules — module teams own their own module directory.
+/modules/                      @abhikm04-svg
+
+# Architecture, ADRs, and the delivery plan — Platform Lead approval required.
+/architecture.md               @abhikm04-svg
+/implementation_plan.md        @abhikm04-svg
+/docs/adr/                     @abhikm04-svg
+
+# CI/CD and repo governance.
+/.github/                      @abhikm04-svg
