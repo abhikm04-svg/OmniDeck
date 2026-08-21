@@ -9,6 +9,36 @@ android {
     namespace = "com.omnideck.kernel"
 }
 
+// ---------------------------------------------------------------------------
+// Coverage exclusion, deliberate and narrow.
+//
+// SecureStoreImpl talks to the Android Keystore, which has no JVM provider and is
+// not implemented by Robolectric: its crypto cannot execute in a unit test at all.
+// It IS tested — src/androidTest/.../SecureStoreImplTest.kt covers the encrypt and
+// decrypt round trip, per-module key isolation, alias sanitisation and the absence
+// of plaintext on disk — but instrumented runs need a device, so Kover (which
+// measures unit tests) never sees that coverage.
+//
+// Leaving it in the denominator would mean the kernel's number understates how much
+// is actually verified, and the only ways to fix that are worse: wiring on-device
+// JaCoCo into every PR, or lowering the floor for every module. So it is excluded
+// here, next to the reason, rather than by dropping the floor.
+//
+// Run the real thing with:  ./gradlew :platform:kernel:connectedDebugAndroidTest
+// ---------------------------------------------------------------------------
+kover {
+    reports {
+        filters {
+            excludes {
+                // The trailing wildcard is load-bearing: each `suspend` function
+                // compiles to its own SecureStoreImpl$put$2 continuation class, and an
+                // exact-name filter leaves those in the denominator as uncovered lines.
+                classes("com.omnideck.kernel.services.SecureStoreImpl", "com.omnideck.kernel.services.SecureStoreImpl\$*")
+            }
+        }
+    }
+}
+
 description =
     """
     Implementation of every platform capability, plus the module loader and lifecycle
@@ -42,4 +72,13 @@ dependencies {
 
     testImplementation(projects.platform.testing)
     testImplementation(libs.robolectric)
+
+    // Instrumented tests. SecureStoreImpl talks to the Android Keystore, which has no
+    // JVM or Robolectric implementation — a real device or emulator is the only place
+    // its crypto can actually run.
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }
