@@ -1,8 +1,14 @@
 # ---------------------------------------------------------------------------
 # Build outputs
+#
+# CAREFUL: a bare `build/` also matches *source* directories named "build" at
+# any depth — including the `com.omnideck.build` package that holds every
+# convention plugin. That silently drops real source from commits and only
+# surfaces on a fresh clone, as a "Could not find implementation class" failure
+# in CI. Keep the negation below, or anchor any new pattern you add.
 # ---------------------------------------------------------------------------
 build/
-*/build/
+!**/src/**/build/
 .gradle/
 out/
 captures/
