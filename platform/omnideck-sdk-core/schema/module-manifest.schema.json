@@ -1,0 +1,222 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://schema.omnideck.app/module-manifest.schema.json",
+    "type": "object",
+    "title": "ModuleManifest",
+    "properties": {
+        "id": {
+            "$ref": "#/$defs/ModuleId"
+        },
+        "version": {
+            "type": "string"
+        },
+        "displayName": {
+            "$ref": "#/$defs/LocalizedString"
+        },
+        "summary": {
+            "$ref": "#/$defs/LocalizedString"
+        },
+        "category": {
+            "type": "string",
+            "enum": [
+                "PRODUCTIVITY",
+                "FINANCE",
+                "HEALTH",
+                "MEDIA",
+                "UTILITIES",
+                "COMMUNICATION",
+                "LEARNING",
+                "INTERNAL"
+            ]
+        },
+        "icon": {
+            "type": "object"
+        },
+        "delivery": {
+            "type": "string",
+            "enum": [
+                "BUNDLED",
+                "FEATURE_SPLIT",
+                "SATELLITE",
+                "WEB"
+            ]
+        },
+        "sdkRange": {
+            "type": "string"
+        },
+        "minHostVersionCode": {
+            "type": "integer"
+        },
+        "entryRoute": {
+            "$ref": "#/$defs/Route"
+        },
+        "deepLinks": {
+            "type": "array",
+            "items": {
+                "$ref": "#/$defs/RoutePattern"
+            }
+        },
+        "requiredCapabilities": {
+            "type": "array",
+            "items": {
+                "$ref": "#/$defs/CapabilityId"
+            },
+            "uniqueItems": true
+        },
+        "optionalCapabilities": {
+            "type": "array",
+            "items": {
+                "$ref": "#/$defs/CapabilityId"
+            },
+            "uniqueItems": true
+        },
+        "androidPermissions": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "uniqueItems": true
+        },
+        "dataCategories": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "NONE",
+                    "PERSONAL_INFO",
+                    "FINANCIAL_INFO",
+                    "HEALTH_AND_FITNESS",
+                    "MESSAGES",
+                    "PHOTOS_AND_VIDEOS",
+                    "AUDIO",
+                    "FILES_AND_DOCS",
+                    "CALENDAR",
+                    "CONTACTS",
+                    "APP_ACTIVITY",
+                    "WEB_BROWSING",
+                    "APP_INFO_AND_PERFORMANCE",
+                    "DEVICE_OR_OTHER_IDS",
+                    "LOCATION"
+                ]
+            },
+            "uniqueItems": true
+        },
+        "entitlement": {
+            "type": "object"
+        },
+        "estimatedDownloadBytes": {
+            "type": "integer"
+        },
+        "supportsOffline": {
+            "type": "boolean"
+        },
+        "processIsolation": {
+            "type": "boolean"
+        },
+        "owner": {
+            "$ref": "#/$defs/TeamRef"
+        }
+    },
+    "required": [
+        "id",
+        "version",
+        "displayName",
+        "summary",
+        "category",
+        "icon",
+        "delivery",
+        "sdkRange",
+        "minHostVersionCode",
+        "entryRoute",
+        "requiredCapabilities",
+        "dataCategories",
+        "owner"
+    ],
+    "additionalProperties": false,
+    "$defs": {
+        "ModuleId": {
+            "type": "object",
+            "title": "ModuleId",
+            "properties": {
+                "value": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "value"
+            ],
+            "additionalProperties": false
+        },
+        "LocalizedString": {
+            "type": "object",
+            "title": "LocalizedString",
+            "properties": {
+                "default": {
+                    "type": "string"
+                },
+                "translations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "default"
+            ],
+            "additionalProperties": false
+        },
+        "Route": {
+            "type": "object",
+            "title": "Route",
+            "properties": {
+                "uri": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "uri"
+            ],
+            "additionalProperties": false
+        },
+        "RoutePattern": {
+            "type": "object",
+            "title": "RoutePattern",
+            "properties": {
+                "pattern": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "pattern"
+            ],
+            "additionalProperties": false
+        },
+        "CapabilityId": {
+            "type": "object",
+            "title": "CapabilityId",
+            "properties": {
+                "value": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "value"
+            ],
+            "additionalProperties": false
+        },
+        "TeamRef": {
+            "type": "object",
+            "title": "TeamRef",
+            "properties": {
+                "value": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "value"
+            ],
+            "additionalProperties": false
+        }
+    }
+}
