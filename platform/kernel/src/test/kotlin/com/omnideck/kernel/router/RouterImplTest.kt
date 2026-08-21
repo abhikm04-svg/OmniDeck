@@ -11,7 +11,10 @@ import com.omnideck.sdk.ModuleInitResult
 import com.omnideck.sdk.Route
 import com.omnideck.sdk.SuspendReason
 import com.omnideck.sdk.capability.NavResult
+import com.omnideck.sdk.capability.NavResultValue
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -21,6 +24,7 @@ import org.junit.Test
  * the Router runs acquisition and continues to the destination. Every test here is
  * really asking "does the caller still get a sensible NavResult?".
  */
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class) // runCurrent
 class RouterImplTest {
 
     private class RecordingSink : NavigationCommandSink {
@@ -267,36 +271,163 @@ class RouterImplTest {
     }
 
     // -- navigateForResult --------------------------------------------------
-    //
-    // Deliberately thin, and the gap is the point.
-    //
-    // `navigateForResult` mints a CorrelationId internally, stores it in `pending`,
-    // and returns a flow filtered on it — but it never calls `sink.navigate(route)`
-    // and never surfaces the id to anyone. The destination therefore has no way to
-    // learn which id to pass back to `setResult`, so no result can ever reach the
-    // waiter. The round trip is unimplemented, not merely untested; OD-205 ("with
-    // process-death-safe correlation ids") is the ticket that finishes it.
-    //
-    // Asserting a passing round trip here would need the test to reach past that gap,
-    // and would then keep passing once it is closed for the wrong reason. These two
-    // pin what genuinely holds today instead.
+
+    @Test
+    fun `a result set by the destination reaches the waiter`() = runTest {
+        val h = Harness()
+        h.fixture.manager.discover()
+        h.fixture.manager.activate(moduleId())
+
+        val results = mutableListOf<NavResultValue<String>>()
+        val waiter = launch {
+            h.router.navigateForResult(notesRoute, String::class.java).collect { results += it }
+        }
+        runCurrent()
+
+        // The destination learns its correlation id from the route it was given.
+        val delivered = h.sink.navigated.single().correlationId!!
+        h.router.setResult(delivered, "picked")
+        runCurrent()
+        waiter.join()
+
+        assertThat(results).containsExactly(NavResultValue.Success("picked"))
+    }
+
+    @Test
+    fun `the correlation id travels in the route so it survives process death`() = runTest {
+        // In the query string, not in memory: the back stack is what Android saves
+        // and restores, so an in-memory-only id would not survive.
+        val h = Harness()
+        h.fixture.manager.discover()
+        h.fixture.manager.activate(moduleId())
+
+        val waiter = launch { h.router.navigateForResult(notesRoute, String::class.java).collect { } }
+        runCurrent()
+
+        val navigated = h.sink.navigated.single()
+        assertThat(navigated.correlationId).isNotNull()
+        assertThat(navigated.query[Route.CORRELATION_KEY]).isEqualTo(navigated.correlationId!!.value)
+        waiter.cancel()
+    }
+
+    @Test
+    fun `nothing navigates until the flow is collected`() = runTest {
+        // Cold by design: building a flow and discarding it must not move the user.
+        val h = Harness()
+        h.fixture.manager.discover()
+
+        h.router.navigateForResult(notesRoute, String::class.java)
+        runCurrent()
+
+        assertThat(h.sink.navigated).isEmpty()
+    }
+
+    @Test
+    fun `a result of the wrong type fails rather than crashing the collector`() = runTest {
+        val h = Harness()
+        h.fixture.manager.discover()
+        h.fixture.manager.activate(moduleId())
+
+        val results = mutableListOf<NavResultValue<String>>()
+        val waiter = launch {
+            h.router.navigateForResult(notesRoute, String::class.java).collect { results += it }
+        }
+        runCurrent()
+
+        h.router.setResult(h.sink.navigated.single().correlationId!!, 42)
+        runCurrent()
+        waiter.join()
+
+        assertThat(results.single()).isInstanceOf(NavResultValue.Failed::class.java)
+        assertThat((results.single() as NavResultValue.Failed).reason).contains("type mismatch")
+    }
+
+    @Test
+    fun `an unreachable destination fails instead of suspending forever`() = runTest {
+        // No result is coming, so leaving the caller awaiting one would hang the flow
+        // it is driving — a spinner that never resolves.
+        val h = Harness()
+        h.fixture.manager.discover()
+        h.fixture.manager.quarantine(moduleId(), "Disabled by the OmniDeck team.")
+
+        val results = mutableListOf<NavResultValue<String>>()
+        val waiter = launch {
+            h.router.navigateForResult(notesRoute, String::class.java).collect { results += it }
+        }
+        runCurrent()
+        waiter.join()
+
+        assertThat((results.single() as NavResultValue.Failed).reason)
+            .isEqualTo("Disabled by the OmniDeck team.")
+    }
+
+    @Test
+    fun `an unhandled route fails the waiter`() = runTest {
+        val h = Harness()
+        h.fixture.manager.discover()
+
+        val results = mutableListOf<NavResultValue<String>>()
+        val waiter = launch {
+            h.router.navigateForResult(Route("omnideck://ghost/home"), String::class.java)
+                .collect { results += it }
+        }
+        runCurrent()
+        waiter.join()
+
+        assertThat(results.single()).isInstanceOf(NavResultValue.Failed::class.java)
+    }
+
+    @Test
+    fun `a result for one waiter is not delivered to another`() = runTest {
+        // Two concurrent round trips must not cross-talk.
+        val h = Harness()
+        h.fixture.manager.discover()
+        h.fixture.manager.activate(moduleId())
+
+        val first = mutableListOf<NavResultValue<String>>()
+        val second = mutableListOf<NavResultValue<String>>()
+        val a = launch { h.router.navigateForResult(notesRoute, String::class.java).collect { first += it } }
+        runCurrent()
+        val b = launch { h.router.navigateForResult(notesRoute, String::class.java).collect { second += it } }
+        runCurrent()
+
+        val secondId = h.sink.navigated[1].correlationId!!
+        h.router.setResult(secondId, "for-second")
+        runCurrent()
+
+        assertThat(second).containsExactly(NavResultValue.Success("for-second"))
+        assertThat(first).isEmpty()
+        a.cancel()
+        b.join()
+    }
 
     @Test
     fun `setResult for an unknown correlation id is a no-op rather than a crash`() {
-        // A late result after its waiter has gone — expected during process death.
+        // A late result after its waiter has gone — expected around process death.
         val h = Harness()
 
         h.router.setResult(CorrelationId("never-issued"), "value")
     }
 
     @Test
-    fun `navigateForResult does not navigate yet`() {
-        // Pins the current limitation so closing OD-205 has to update this test,
-        // rather than the gap being rediscovered from a bug report.
+    fun `only the first result is delivered`() = runTest {
         val h = Harness()
+        h.fixture.manager.discover()
+        h.fixture.manager.activate(moduleId())
 
-        h.router.navigateForResult(notesRoute, String::class.java)
+        val results = mutableListOf<NavResultValue<String>>()
+        val waiter = launch {
+            h.router.navigateForResult(notesRoute, String::class.java).collect { results += it }
+        }
+        runCurrent()
 
-        assertThat(h.sink.navigated).isEmpty()
+        val id = h.sink.navigated.single().correlationId!!
+        h.router.setResult(id, "first")
+        runCurrent()
+        h.router.setResult(id, "second")
+        runCurrent()
+        waiter.join()
+
+        assertThat(results).containsExactly(NavResultValue.Success("first"))
     }
 }

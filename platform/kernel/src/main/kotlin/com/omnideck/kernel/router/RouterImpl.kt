@@ -10,12 +10,15 @@ import com.omnideck.sdk.capability.NavResult
 import com.omnideck.sdk.capability.NavResultValue
 import com.omnideck.sdk.capability.Router
 import com.omnideck.sdk.capability.TelemetryService
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -82,21 +85,62 @@ class RouterImpl @Inject constructor(
         }
     }
 
+    /**
+     * Navigates and awaits one typed result (§10.2, OD-205).
+     *
+     * The correlation id travels **in the route's query string**, not in memory. That
+     * is what lets the destination find it: it arrives in the destination's
+     * `RouteArgs` like any other parameter, and the route itself is held in the
+     * navigation back stack, which Android saves and restores across process death.
+     *
+     * Cold by design — nothing navigates until the flow is collected, so a caller that
+     * builds a flow and discards it has not moved the user. The subscription is
+     * established *before* navigating, so a destination that returns a result
+     * immediately cannot beat the collector to it.
+     */
     override fun <T : Any> navigateForResult(route: Route, type: Class<T>): Flow<NavResultValue<T>> {
         val correlationId = CorrelationId(java.util.UUID.randomUUID().toString())
-        pending[correlationId] = route
 
-        return results
-            .filter { (id, _) -> id == correlationId }
-            .map { (_, value) ->
-                @Suppress("UNCHECKED_CAST")
-                if (type.isInstance(value)) {
-                    NavResultValue.Success(value as T)
-                } else {
-                    NavResultValue.Failed("Result type mismatch: expected ${type.simpleName}")
-                }
+        return channelFlow {
+            pending[correlationId] = route
+
+            val awaiting = launch {
+                results.filter { (id, _) -> id == correlationId }
+                    .take(1)
+                    .collect { (_, value) -> send(asResultValue(value, type)) }
             }
-            .take(1)
+
+            try {
+                when (val outcome = navigate(route.withCorrelationId(correlationId))) {
+                    is NavResult.Navigated, is NavResult.NavigatedAfterInstall -> awaiting.join()
+
+                    // Never reached the destination, so no result is coming. Reporting
+                    // the reason beats leaving the caller suspended forever.
+                    is NavResult.Unavailable -> failed(awaiting, outcome.reason)
+                    is NavResult.AcquisitionAborted -> failed(awaiting, outcome.reason)
+                    is NavResult.Unhandled -> failed(awaiting, "Nothing handles ${route.uri}.")
+                }
+            } finally {
+                pending.remove(correlationId)
+            }
+        }
+    }
+
+    private suspend fun ProducerScope<*>.failed(awaiting: Job, reason: String) {
+        awaiting.cancel()
+        @Suppress("UNCHECKED_CAST")
+        (this as ProducerScope<NavResultValue<Nothing>>).send(NavResultValue.Failed(reason))
+    }
+
+    private fun <T : Any> asResultValue(value: Any, type: Class<T>): NavResultValue<T> = if (type.isInstance(value)) {
+        @Suppress("UNCHECKED_CAST")
+        NavResultValue.Success(value as T)
+    } else {
+        // A type mismatch is the destination's bug, but it must surface as a value
+        // rather than a ClassCastException thrown inside the caller's collector.
+        NavResultValue.Failed(
+            "Result type mismatch: expected ${type.simpleName}, got ${value::class.java.simpleName}",
+        )
     }
 
     override fun canHandle(route: Route): Boolean = ownerOf(route) != null

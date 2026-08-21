@@ -40,11 +40,33 @@ data class Route(val uri: String) {
             ?.toMap()
             .orEmpty()
 
+    /**
+     * The result correlation id carried by this route, if any.
+     *
+     * A destination reached through `navigateForResult` reads this and passes it back
+     * to `Router.setResult`. It rides in the query string rather than in memory
+     * precisely so it survives process death: the route is held in the navigation
+     * back stack, which Android saves and restores (§10.2).
+     */
+    val correlationId: CorrelationId?
+        get() = query[CORRELATION_KEY]?.takeIf(String::isNotBlank)?.let(::CorrelationId)
+
+    /** Returns this route with [id] attached, replacing any correlation already present. */
+    fun withCorrelationId(id: CorrelationId): Route {
+        val base = uri.substringBefore('?')
+        val existing = query.filterKeys { it != CORRELATION_KEY }
+        val params = existing + (CORRELATION_KEY to id.value)
+        return Route(base + "?" + params.entries.joinToString("&") { "${it.key}=${it.value}" })
+    }
+
     override fun toString(): String = uri
 
     companion object {
         const val SCHEME = "omnideck"
         const val SCHEME_PREFIX = "$SCHEME://"
+
+        /** Query key carrying a `navigateForResult` correlation id. */
+        const val CORRELATION_KEY = "omnideck_result_to"
 
         fun of(moduleId: ModuleId, path: String = ""): Route =
             Route("$SCHEME_PREFIX${moduleId.shortId}${if (path.isEmpty()) "" else "/${path.trimStart('/')}"}")

@@ -542,6 +542,7 @@ public final class com/omnideck/sdk/PurgeScope : java/lang/Enum {
 }
 
 public final class com/omnideck/sdk/Route {
+	public static final field CORRELATION_KEY Ljava/lang/String;
 	public static final field Companion Lcom/omnideck/sdk/Route$Companion;
 	public static final field SCHEME Ljava/lang/String;
 	public static final field SCHEME_PREFIX Ljava/lang/String;
@@ -550,12 +551,14 @@ public final class com/omnideck/sdk/Route {
 	public final fun copy (Ljava/lang/String;)Lcom/omnideck/sdk/Route;
 	public static synthetic fun copy$default (Lcom/omnideck/sdk/Route;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/Route;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCorrelationId-kTqCIpI ()Ljava/lang/String;
 	public final fun getHost ()Ljava/lang/String;
 	public final fun getPath ()Ljava/lang/String;
 	public final fun getQuery ()Ljava/util/Map;
 	public final fun getUri ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+	public final fun withCorrelationId-TT4HT6k (Ljava/lang/String;)Lcom/omnideck/sdk/Route;
 }
 
 public final synthetic class com/omnideck/sdk/Route$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
