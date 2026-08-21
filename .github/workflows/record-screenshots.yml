@@ -16,6 +16,12 @@ name: Record screenshots
 # should be a deliberate act with a diff to review, never an automatic step.
 on:
   workflow_dispatch:
+  # Pushing a branch under record-screenshots/** records a fresh set. This exists
+  # because workflow_dispatch is only offered for workflows already on the default
+  # branch, which is no help the first time — and no help to a contributor on a fork.
+  push:
+    branches:
+      - "record-screenshots/**"
 
 permissions:
   contents: read
