@@ -18,7 +18,6 @@ import com.omnideck.testing.FakeBillingService
 import com.omnideck.testing.FakeConsentService
 import com.omnideck.testing.FakeEventBus
 import com.omnideck.testing.FakeFeatureFlagService
-import com.omnideck.testing.FakePermissionBroker
 import com.omnideck.testing.FakeRouter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest

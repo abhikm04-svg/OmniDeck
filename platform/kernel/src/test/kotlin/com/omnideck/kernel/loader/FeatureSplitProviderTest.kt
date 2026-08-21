@@ -3,13 +3,13 @@ package com.omnideck.kernel.loader
 import com.google.android.play.core.splitinstall.model.SplitInstallErrorCode
 import com.google.common.truth.Truth.assertThat
 import com.omnideck.sdk.DeliveryKind
+import com.omnideck.sdk.DestinationRegistry
 import com.omnideck.sdk.InstallProgress
 import com.omnideck.sdk.ModuleId
-import com.omnideck.sdk.OmniModule
-import com.omnideck.sdk.PlatformServices
 import com.omnideck.sdk.ModuleInitResult
 import com.omnideck.sdk.ModuleManifest
-import com.omnideck.sdk.DestinationRegistry
+import com.omnideck.sdk.OmniModule
+import com.omnideck.sdk.PlatformServices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -49,10 +49,8 @@ class FeatureSplitProviderTest {
         fun markInstalled(splitName: String) = installed.add(splitName)
     }
 
-    private fun provider(
-        installer: SplitInstaller,
-        classLoader: () -> ClassLoader = { javaClass.classLoader!! },
-    ) = FeatureSplitProvider(installer, Dispatchers.Unconfined, classLoader)
+    private fun provider(installer: SplitInstaller, classLoader: () -> ClassLoader = { javaClass.classLoader!! }) =
+        FeatureSplitProvider(installer, Dispatchers.Unconfined, classLoader)
 
     // -- identity -----------------------------------------------------------
 
@@ -75,13 +73,14 @@ class FeatureSplitProviderTest {
     // -- install ------------------------------------------------------------
 
     @Test
-    fun `an already-installed split reports success without asking Play`() {
+    fun `an already-installed split reports success without asking Play`() = runTest {
         // Starting a session for a split already on device would show the user a
         // download that is not happening.
         val installer = FakeSplitInstaller().apply { markInstalled(notes.splitName) }
 
-        val progress = runTest { provider(installer).install(notes).toList() }
+        val progress = provider(installer).install(notes).toList()
 
+        assertThat(progress).containsExactly(InstallProgress.Installed)
         assertThat(installer.installRequests).isEmpty()
     }
 

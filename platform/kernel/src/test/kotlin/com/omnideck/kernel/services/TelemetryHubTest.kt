@@ -95,7 +95,10 @@ class TelemetryHubTest {
     fun `all sinks receive every signal`() {
         val a = RecordingSink()
         val b = RecordingSink()
-        val hub = TelemetryHub().apply { addSink(a); addSink(b) }
+        val hub = TelemetryHub().apply {
+            addSink(a)
+            addSink(b)
+        }
 
         hub.scopedTo(notes).event("e")
 
@@ -110,7 +113,10 @@ class TelemetryHubTest {
             override fun emit(signal: TelemetrySignal) = error("exporter down")
         }
         val healthy = RecordingSink()
-        val hub = TelemetryHub().apply { addSink(exploding); addSink(healthy) }
+        val hub = TelemetryHub().apply {
+            addSink(exploding)
+            addSink(healthy)
+        }
 
         hub.scopedTo(notes).event("e")
 

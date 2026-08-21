@@ -41,10 +41,8 @@ internal const val TEST_MODULE = "com.omnideck.notes"
 
 internal fun moduleId(value: String = TEST_MODULE) = ModuleId(value)
 
-internal fun descriptor(
-    id: ModuleId = moduleId(),
-    delivery: DeliveryKind = DeliveryKind.BUNDLED,
-) = ModuleDescriptor(id = id, entryPointClass = "${id.value}.ModuleEntryPoint", delivery = delivery)
+internal fun descriptor(id: ModuleId = moduleId(), delivery: DeliveryKind = DeliveryKind.BUNDLED) =
+    ModuleDescriptor(id = id, entryPointClass = "${id.value}.ModuleEntryPoint", delivery = delivery)
 
 internal fun manifest(
     id: ModuleId = moduleId(),

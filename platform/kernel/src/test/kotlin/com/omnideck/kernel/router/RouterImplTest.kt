@@ -173,7 +173,9 @@ class RouterImplTest {
             LifecycleFixture(
                 provider = ScriptedProvider(
                     installed = false,
-                    installFlow = flowOf(InstallProgress.Failed(code = -6, message = "network unreachable", retryable = true)),
+                    installFlow = flowOf(
+                        InstallProgress.Failed(code = -6, message = "network unreachable", retryable = true),
+                    ),
                 ),
             ),
         )
