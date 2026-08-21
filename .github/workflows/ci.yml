@@ -20,7 +20,9 @@ jobs:
   build:
     name: Build, test, lint
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Roborazzi renders every shared component under Robolectric, which is slow on a
+    # cold runner. 30 minutes cancelled the job mid-screenshot-diff.
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,6 +40,16 @@ jobs:
 
       - name: Verify wrapper
         uses: gradle/actions/wrapper-validation@v4
+
+      # Robolectric downloads an android-all jar per SDK level on first use, which is
+      # most of the screenshot step's cold-start cost. Cached separately from the
+      # Gradle cache because it lives in ~/.m2, which setup-gradle does not manage.
+      - name: Cache Robolectric runtimes
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: robolectric-${{ runner.os }}-
 
       - name: Assemble debug
         run: ./gradlew :app:assembleDebug --stacktrace
