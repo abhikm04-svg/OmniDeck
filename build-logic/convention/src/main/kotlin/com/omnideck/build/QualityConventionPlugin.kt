@@ -51,13 +51,14 @@ class QualityConventionPlugin : Plugin<Project> {
         )
 
         // ------------------------------------------------------------------
-        // Coverage: reporting is always on; the minimum-coverage *gate*
-        // (OD-008) is wired here but deliberately left off the `check`
-        // lifecycle in Phase 0, where no tests exist yet. `koverVerify`
-        // becomes CI-blocking at the Phase 1 exit gate ("platform:*
-        // coverage >= 80%"), once :platform:testing fakes make writing
-        // those tests possible. Run it explicitly to see where a project
-        // stands before then.
+        // Coverage floors (OD-008). Blocking from the Phase 1 exit gate onward:
+        // "platform:* coverage >= 80%, CI-enforced".
+        //
+        // A project only gets a floor once it has tests. Applying one to an
+        // untested module turns its first green build red for a reason its author
+        // did not cause, which is how a coverage gate gets disabled wholesale
+        // rather than met. Modules without tests are reported but not failed;
+        // they inherit the floor as soon as a test source set appears.
         // ------------------------------------------------------------------
         val minCoverage = when {
             path.startsWith(":platform:") ->
@@ -68,14 +69,34 @@ class QualityConventionPlugin : Plugin<Project> {
         }?.toInt()
 
         if (minCoverage != null) {
+            val hasTests = file("src/test").isDirectory || file("src/androidTest").isDirectory
             extensions.configure(KoverProjectExtension::class.java) {
                 reports {
+                    filters {
+                        excludes {
+                            // Code we do not author. Dagger/Hilt factories and
+                            // component plumbing are generated from annotations and
+                            // covered by Dagger's own test suite; counting them
+                            // measures how much generated boilerplate a module has,
+                            // not how well its behaviour is tested.
+                            classes(
+                                "*_Factory",
+                                "*_Factory\$*",
+                                "*_MembersInjector",
+                                "*_HiltModules*",
+                                "*_ProvideFactory",
+                                "*_ComponentTreeDeps",
+                                "Hilt_*",
+                                "*.Hilt_*",
+                                // Compose and Kotlin synthetics.
+                                "*ComposableSingletons*",
+                                "*\$\$serializer",
+                            )
+                            annotatedBy("javax.annotation.processing.Generated", "dagger.internal.DaggerGenerated")
+                        }
+                    }
                     verify {
-                        // Kover wires `koverVerify` into `check` automatically once any
-                        // rule exists, which would fail Phase 0's `./gradlew build` on
-                        // day one (no tests yet). Warn instead of fail until Phase 1's
-                        // exit gate flips this to a real, CI-blocking gate.
-                        warningInsteadOfFailure.set(true)
+                        warningInsteadOfFailure.set(!hasTests)
                         rule("Minimum line coverage for $path") {
                             minBound(minCoverage)
                         }
@@ -95,15 +116,32 @@ class QualityConventionPlugin : Plugin<Project> {
         }
 
         afterEvaluate {
-            val deps = configurations
-                .filter { it.name in DEPENDENCY_CONFIGURATIONS }
+            val declared = configurations.filter { it.name in DEPENDENCY_CONFIGURATIONS }
+
+            val projectDeps = declared
                 .flatMap { cfg ->
                     cfg.dependencies.filterIsInstance<org.gradle.api.artifacts.ProjectDependency>()
                         .map { it.path }
                 }
                 .distinct()
                 .sorted()
-            checkArchitecture.configure { dependencyPaths.set(deps) }
+
+            // External coordinates too. Project dependencies alone cannot catch
+            // `implementation(libs.compose.ui)` being added to the pure-Kotlin SDK
+            // core, which is exactly the drift the Phase 1 exit gate is about.
+            val externalDeps = declared
+                .flatMap { cfg ->
+                    cfg.dependencies
+                        .filterIsInstance<org.gradle.api.artifacts.ExternalModuleDependency>()
+                        .map { "${it.group}:${it.name}" }
+                }
+                .distinct()
+                .sorted()
+
+            checkArchitecture.configure {
+                dependencyPaths.set(projectDeps)
+                externalDependencies.set(externalDeps)
+            }
         }
 
         tasks.named("check").configure { dependsOn(checkArchitecture) }
@@ -128,6 +166,8 @@ abstract class CheckArchitectureTask : DefaultTask() {
     @get:Input abstract val projectPath: Property<String>
 
     @get:Input abstract val dependencyPaths: ListProperty<String>
+
+    @get:Input abstract val externalDependencies: ListProperty<String>
 
     init {
         group = "verification"
@@ -173,6 +213,31 @@ abstract class CheckArchitectureTask : DefaultTask() {
             }
         }
 
+        // ------------------------------------------------------------------
+        // Rule 3, external half (Phase 1 exit gate).
+        //
+        // omnideck-sdk-core is the layer that must stay portable: the backend shares
+        // its manifest types, and the KMP migration in §21 is a move only while it
+        // has no Android or UI dependency. The project-dependency pass above cannot
+        // see `implementation(libs.compose.ui)`, so it is checked here by coordinate.
+        //
+        // Note this rule applies to sdk-core ONLY. The Android half (omnideck-sdk)
+        // legitimately carries Compose, Room, OkHttp and WorkManager: modules
+        // contribute @Composable destinations (ADR-003) and capability interfaces
+        // hand back OkHttp/Retrofit types by design.
+        // ------------------------------------------------------------------
+        if (isSdkCore) {
+            externalDependencies.getOrElse(emptyList()).forEach { coordinate ->
+                val group = coordinate.substringBefore(':')
+                val forbidden = FORBIDDEN_SDK_CORE_GROUPS.firstOrNull { group.startsWith(it) }
+                if (forbidden != null) {
+                    violations += "$path depends on $coordinate. omnideck-sdk-core must stay pure " +
+                        "Kotlin — no Android, Compose, Hilt or UI. Put it in :platform:omnideck-sdk " +
+                        "instead, which is the Android half of the contract."
+                }
+            }
+        }
+
         if (violations.isNotEmpty()) {
             throw GradleException(
                 buildString {
@@ -184,6 +249,28 @@ abstract class CheckArchitectureTask : DefaultTask() {
                 },
             )
         }
-        logger.lifecycle("checkArchitecture: $path OK (${deps.size} project dependencies)")
+        val externalCount = externalDependencies.getOrElse(emptyList()).size
+        logger.lifecycle(
+            "checkArchitecture: $path OK (${deps.size} project, $externalCount external dependencies)",
+        )
+    }
+
+    private companion object {
+        /**
+         * Group prefixes that would end sdk-core's portability. Matched by prefix so
+         * `androidx.compose.ui` and friends are covered without listing every artifact.
+         * `org.jetbrains.kotlinx` is deliberately absent: coroutines, serialization and
+         * datetime are all multiplatform and are what sdk-core is built from.
+         */
+        val FORBIDDEN_SDK_CORE_GROUPS = listOf(
+            "androidx",
+            "com.android",
+            "com.google.android",
+            "com.google.dagger",
+            "org.jetbrains.compose",
+            "io.coil-kt",
+            "com.squareup.okhttp3",
+            "com.squareup.retrofit2",
+        )
     }
 }

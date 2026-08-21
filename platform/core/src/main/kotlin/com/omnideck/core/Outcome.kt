@@ -15,8 +15,25 @@ sealed interface Outcome<out T> {
     val isSuccess: Boolean get() = this is Success
 
     fun getOrNull(): T? = (this as? Success)?.value
+}
 
-    fun getOrDefault(default: @UnsafeVariance T): T = getOrNull() ?: default
+/**
+ * The value on success, [default] on failure.
+ *
+ * An extension rather than a member, deliberately. As a member it needed
+ * `@UnsafeVariance` to typecheck against `out T`, and that annotation only silenced
+ * the compiler: [Outcome.Failure] is an `Outcome<Nothing>`, so the inherited member
+ * specialised `T` to `Nothing` and the compiler inserted a cast of the returned value
+ * to `Void`. Every `getOrDefault` call on a failure threw ClassCastException — on the
+ * error path, which is exactly where callers rely on it.
+ *
+ * As an extension, `T` is bound at the call site from the declared type, so no such
+ * cast exists. It also branches on the variant rather than using `?:`, so a
+ * `Success(null)` correctly yields null instead of being mistaken for a failure.
+ */
+fun <T> Outcome<T>.getOrDefault(default: T): T = when (this) {
+    is Outcome.Success -> value
+    is Outcome.Failure -> default
 }
 
 inline fun <T, R> Outcome<T>.map(transform: (T) -> R): Outcome<R> = when (this) {

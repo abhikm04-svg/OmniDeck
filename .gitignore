@@ -42,8 +42,10 @@ local.properties
 # ---------------------------------------------------------------------------
 .kotlin/
 
-# Scratch build logs (./gradlew build *> build_log.txt and friends).
+# Scratch gradle output redirected to a file (./gradlew build *> build_log.txt).
 *_log.txt
+/*.txt
+!/CMakeLists.txt
 
 # Play upload key must never live in the repo (§12.3 of the internal architecture
 # baseline) — CI injects it from KMS/secrets, never from a file here.

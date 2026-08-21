@@ -11,6 +11,7 @@ import com.omnideck.kernel.loader.BundledModuleProvider
 import com.omnideck.kernel.loader.FeatureSplitProvider
 import com.omnideck.kernel.loader.ModuleDescriptorSource
 import com.omnideck.kernel.loader.ModuleProvider
+import com.omnideck.kernel.loader.PlaySplitInstaller
 import com.omnideck.kernel.router.RouterImpl
 import com.omnideck.kernel.services.AnonymousAuthService
 import com.omnideck.kernel.services.ConsentServiceImpl
@@ -108,9 +109,11 @@ object KernelModule {
         setOf(
             BundledModuleProvider(dispatchers.io),
             FeatureSplitProvider(
-                context = context,
-                splitInstallManager = SplitInstallManagerFactory.create(context),
+                installer = PlaySplitInstaller(SplitInstallManagerFactory.create(context)),
                 io = dispatchers.io,
+                // Re-read per load, not captured: SplitCompat swaps the class loader
+                // in after an install, and a captured one cannot see the new code.
+                classLoader = { context.classLoader },
             ),
         )
 

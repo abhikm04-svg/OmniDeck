@@ -542,6 +542,7 @@ public final class com/omnideck/sdk/PurgeScope : java/lang/Enum {
 }
 
 public final class com/omnideck/sdk/Route {
+	public static final field CORRELATION_KEY Ljava/lang/String;
 	public static final field Companion Lcom/omnideck/sdk/Route$Companion;
 	public static final field SCHEME Ljava/lang/String;
 	public static final field SCHEME_PREFIX Ljava/lang/String;
@@ -550,12 +551,14 @@ public final class com/omnideck/sdk/Route {
 	public final fun copy (Ljava/lang/String;)Lcom/omnideck/sdk/Route;
 	public static synthetic fun copy$default (Lcom/omnideck/sdk/Route;Ljava/lang/String;ILjava/lang/Object;)Lcom/omnideck/sdk/Route;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCorrelationId-kTqCIpI ()Ljava/lang/String;
 	public final fun getHost ()Ljava/lang/String;
 	public final fun getPath ()Ljava/lang/String;
 	public final fun getQuery ()Ljava/util/Map;
 	public final fun getUri ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+	public final fun withCorrelationId-TT4HT6k (Ljava/lang/String;)Lcom/omnideck/sdk/Route;
 }
 
 public final synthetic class com/omnideck/sdk/Route$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
@@ -1196,5 +1199,20 @@ public abstract interface class com/omnideck/sdk/capability/TelemetryService$Spa
 
 public final class com/omnideck/sdk/capability/TelemetryService$Span$DefaultImpls {
 	public static synthetic fun setStatus$default (Lcom/omnideck/sdk/capability/TelemetryService$Span;ZLjava/lang/String;ILjava/lang/Object;)V
+}
+
+public final class com/omnideck/sdk/schema/JsonSchema {
+	public static final field INSTANCE Lcom/omnideck/sdk/schema/JsonSchema;
+	public final fun of (Lkotlinx/serialization/descriptors/SerialDescriptor;Ljava/lang/String;)Lkotlinx/serialization/json/JsonObject;
+	public static synthetic fun of$default (Lcom/omnideck/sdk/schema/JsonSchema;Lkotlinx/serialization/descriptors/SerialDescriptor;Ljava/lang/String;ILjava/lang/Object;)Lkotlinx/serialization/json/JsonObject;
+	public final fun render (Lkotlinx/serialization/descriptors/SerialDescriptor;Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun render$default (Lcom/omnideck/sdk/schema/JsonSchema;Lkotlinx/serialization/descriptors/SerialDescriptor;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class com/omnideck/sdk/schema/ManifestSchema {
+	public static final field ID Ljava/lang/String;
+	public static final field INSTANCE Lcom/omnideck/sdk/schema/ManifestSchema;
+	public static final fun main ([Ljava/lang/String;)V
+	public final fun render ()Ljava/lang/String;
 }
 
