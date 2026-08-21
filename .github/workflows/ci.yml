@@ -58,6 +58,25 @@ jobs:
       - name: Android Lint
         run: ./gradlew lint --stacktrace
 
+      # OD-113. Re-renders every shared component and diffs it against the committed
+      # baselines. A contrast or layout regression in the design system reaches every
+      # module at once and no module's own tests would catch it, so this is the only
+      # thing standing between such a change and all of them.
+      #
+      # Note: Roborazzi records inside the ordinary test task, so a plain unit-test
+      # failure in that module blocks capture entirely. A run reporting *missing*
+      # baselines rather than a diff usually means an ordinary test failed first.
+      - name: Screenshot diff
+        run: ./gradlew verifyRoborazziDebug --stacktrace
+
+      - name: Upload screenshot diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot-diffs
+          path: '**/build/outputs/roborazzi/**'
+          retention-days: 14
+
       - name: Coverage report
         run: ./gradlew koverXmlReport koverHtmlReport --stacktrace
 

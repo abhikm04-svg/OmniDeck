@@ -68,37 +68,56 @@ class QualityConventionPlugin : Plugin<Project> {
             else -> null
         }?.toInt()
 
+        // Per-project exclusions are contributed through this extension rather than a
+        // `kover { }` block in the project's own build file. A separately-declared
+        // filter block is applied by the report tasks but ignored by koverVerify,
+        // which produced a build where the report said 81.1% and the gate said 75.8%
+        // on the same commit. Declaring everything in one place keeps the number that
+        // is enforced identical to the number anyone can inspect.
+        val coverage = extensions.create("omnideckCoverage", OmniDeckCoverageExtension::class.java)
+
         if (minCoverage != null) {
             val hasTests = file("src/test").isDirectory || file("src/androidTest").isDirectory
-            extensions.configure(KoverProjectExtension::class.java) {
-                reports {
-                    filters {
-                        excludes {
-                            // Code we do not author. Dagger/Hilt factories and
-                            // component plumbing are generated from annotations and
-                            // covered by Dagger's own test suite; counting them
-                            // measures how much generated boilerplate a module has,
-                            // not how well its behaviour is tested.
-                            classes(
-                                "*_Factory",
-                                "*_Factory\$*",
-                                "*_MembersInjector",
-                                "*_HiltModules*",
-                                "*_ProvideFactory",
-                                "*_ComponentTreeDeps",
-                                "Hilt_*",
-                                "*.Hilt_*",
-                                // Compose and Kotlin synthetics.
-                                "*ComposableSingletons*",
-                                "*\$\$serializer",
-                            )
-                            annotatedBy("javax.annotation.processing.Generated", "dagger.internal.DaggerGenerated")
+
+            // Deferred so the extension has been configured by the project's build
+            // file before its values are read.
+            afterEvaluate {
+                extensions.configure(KoverProjectExtension::class.java) {
+                    reports {
+                        filters {
+                            excludes {
+                                // Code we do not author. Dagger/Hilt factories and
+                                // component plumbing are generated from annotations
+                                // and covered by Dagger's own test suite; counting
+                                // them measures how much generated boilerplate a
+                                // module has, not how well its behaviour is tested.
+                                classes(
+                                    "*_Factory",
+                                    "*_Factory\$*",
+                                    "*_MembersInjector",
+                                    "*_HiltModules*",
+                                    "*_ProvideFactory",
+                                    "*_ComponentTreeDeps",
+                                    "Hilt_*",
+                                    "*.Hilt_*",
+                                    // Compose and Kotlin synthetics.
+                                    "*ComposableSingletons*",
+                                    "*\$\$serializer",
+                                )
+                                annotatedBy(
+                                    "javax.annotation.processing.Generated",
+                                    "dagger.internal.DaggerGenerated",
+                                )
+
+                                coverage.excludedClasses.get().forEach { classes(it) }
+                                coverage.excludedAnnotations.get().forEach { annotatedBy(it) }
+                            }
                         }
-                    }
-                    verify {
-                        warningInsteadOfFailure.set(!hasTests)
-                        rule("Minimum line coverage for $path") {
-                            minBound(minCoverage)
+                        verify {
+                            warningInsteadOfFailure.set(!hasTests)
+                            rule("Minimum line coverage for $path") {
+                                minBound(minCoverage)
+                            }
                         }
                     }
                 }
@@ -273,4 +292,20 @@ abstract class CheckArchitectureTask : DefaultTask() {
             "com.squareup.retrofit2",
         )
     }
+}
+
+/**
+ * Per-project coverage exclusions.
+ *
+ * Narrow and documented next to their reason, never broad. An exclusion is warranted
+ * when code genuinely cannot be measured by a unit test — Android Keystore, Compose
+ * under Robolectric — and is verified some other way; it is never a substitute for
+ * writing the test.
+ */
+abstract class OmniDeckCoverageExtension {
+    /** Fully-qualified class patterns; `Foo$*` also covers generated nested classes. */
+    abstract val excludedClasses: ListProperty<String>
+
+    /** Fully-qualified annotation names; anything annotated is excluded. */
+    abstract val excludedAnnotations: ListProperty<String>
 }

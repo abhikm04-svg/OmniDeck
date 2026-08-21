@@ -29,28 +29,21 @@ roborazzi {
 // ---------------------------------------------------------------------------
 // Coverage exclusion, deliberate and narrow.
 //
-// Composables are executed by the screenshot tests above — Roborazzi renders them for
-// real — but Kover does not credit code run through Compose's runtime under
-// Robolectric. The evidence is unambiguous: plain property initializers in Tokens.kt
-// report 0% despite every screenshot depending on them, while the module's ordinary
-// Kotlin (TileState, WindowWidthClass, Spacing) reports 100% from the same test run.
+// Kover does not credit code run through Compose's runtime under Robolectric. The
+// evidence is unambiguous: plain property initializers in Tokens.kt report 0% despite
+// every screenshot depending on them, while the module's ordinary Kotlin (TileState,
+// WindowWidthClass, Spacing) reports 100% from the same test run.
 //
-// Leaving them in would make the number measure how much of the module is UI rather
-// than how well it is tested, and the honest response to that is not to lower the
-// floor for everyone. Excluded by annotation rather than by file, so the pure
-// functions that share a file — the adaptive layout rules — stay measured.
+// Excluded by annotation rather than by file, so the pure functions that share a file
+// with a composable — the adaptive layout rules — stay measured. Leaving composables
+// in would make the number measure how much of the module is UI rather than how well
+// it is tested, and the honest response to that is not to lower the floor for everyone.
 //
-// What actually verifies this code is `./gradlew :platform:design-system:verifyRoborazziDebug`,
-// which is CI-blocking, and the accessibility assertions in TileStateTest.
+// What actually verifies this code is the screenshot gate:
+//   ./gradlew :platform:design-system:verifyRoborazziDebug
 // ---------------------------------------------------------------------------
-kover {
-    reports {
-        filters {
-            excludes {
-                annotatedBy("androidx.compose.runtime.Composable")
-            }
-        }
-    }
+omnideckCoverage {
+    excludedAnnotations.add("androidx.compose.runtime.Composable")
 }
 
 description = "Shared Material 3 theme and components. Goal G4 — one look and feel across every module."
