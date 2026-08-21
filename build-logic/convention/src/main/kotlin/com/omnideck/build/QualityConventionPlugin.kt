@@ -72,6 +72,29 @@ class QualityConventionPlugin : Plugin<Project> {
             val hasTests = file("src/test").isDirectory || file("src/androidTest").isDirectory
             extensions.configure(KoverProjectExtension::class.java) {
                 reports {
+                    filters {
+                        excludes {
+                            // Code we do not author. Dagger/Hilt factories and
+                            // component plumbing are generated from annotations and
+                            // covered by Dagger's own test suite; counting them
+                            // measures how much generated boilerplate a module has,
+                            // not how well its behaviour is tested.
+                            classes(
+                                "*_Factory",
+                                "*_Factory\$*",
+                                "*_MembersInjector",
+                                "*_HiltModules*",
+                                "*_ProvideFactory",
+                                "*_ComponentTreeDeps",
+                                "Hilt_*",
+                                "*.Hilt_*",
+                                // Compose and Kotlin synthetics.
+                                "*ComposableSingletons*",
+                                "*\$\$serializer",
+                            )
+                            annotatedBy("javax.annotation.processing.Generated", "dagger.internal.DaggerGenerated")
+                        }
+                    }
                     verify {
                         warningInsteadOfFailure.set(!hasTests)
                         rule("Minimum line coverage for $path") {

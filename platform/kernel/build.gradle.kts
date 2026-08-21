@@ -72,6 +72,13 @@ dependencies {
 
     testImplementation(projects.platform.testing)
     testImplementation(libs.robolectric)
+    // ApplicationProvider, for the Robolectric-backed service tests.
+    testImplementation(libs.androidx.test.core)
+    // WorkManagerTestInitHelper. The Shell strips WorkManagerInitializer from the
+    // manifest and initialises WorkManager itself, so tests have to stand it up too —
+    // and calling WorkManager.initialize directly leaks "already initialized" across
+    // Robolectric's per-test Application.
+    testImplementation(libs.androidx.work.testing)
 
     // Instrumented tests. SecureStoreImpl talks to the Android Keystore, which has no
     // JVM or Robolectric implementation — a real device or emulator is the only place

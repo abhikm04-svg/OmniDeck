@@ -109,6 +109,7 @@ androidx-datastore-core  = { module = "androidx.datastore:datastore",           
 androidx-startup         = { module = "androidx.startup:startup-runtime",           version.ref = "androidxStartup" }
 androidx-biometric       = { module = "androidx.biometric:biometric-ktx",           version.ref = "androidxSecurityBiometric" }
 androidx-work-runtime    = { module = "androidx.work:work-runtime-ktx",             version.ref = "androidxWork" }
+androidx-work-testing    = { module = "androidx.work:work-testing",                 version.ref = "androidxWork" }
 androidx-room-runtime    = { module = "androidx.room:room-runtime",                 version.ref = "androidxRoom" }
 androidx-room-ktx        = { module = "androidx.room:room-ktx",                     version.ref = "androidxRoom" }
 androidx-room-compiler   = { module = "androidx.room:room-compiler",                version.ref = "androidxRoom" }

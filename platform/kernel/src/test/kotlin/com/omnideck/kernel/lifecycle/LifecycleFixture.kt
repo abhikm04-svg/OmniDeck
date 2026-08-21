@@ -61,7 +61,10 @@ internal fun manifest(
     delivery = DeliveryKind.BUNDLED,
     sdkRange = sdkRange,
     minHostVersionCode = minHostVersionCode,
-    entryRoute = Route("omnideck://notes/home"),
+    // Derived, not hardcoded: ModuleManifest validates that the entry route's host
+    // matches the module's short id, so a fixture with a fixed route silently breaks
+    // the moment a test uses a different module.
+    entryRoute = Route("omnideck://${id.shortId}/home"),
     requiredCapabilities = required,
     dataCategories = setOf(DataCategory.APP_ACTIVITY),
     owner = TeamRef("platform"),
