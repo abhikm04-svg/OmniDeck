@@ -49,10 +49,7 @@ object SystemClock : Clock {
  * assertThat(cache.get("k")).isNull()
  * ```
  */
-class MutableClock(
-    startMillis: Long = 0L,
-    private val zone: ZoneId = ZoneId.of("UTC"),
-) : Clock {
+class MutableClock(startMillis: Long = 0L, private val zone: ZoneId = ZoneId.of("UTC")) : Clock {
 
     private var millis: Long = startMillis
 

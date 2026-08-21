@@ -115,11 +115,10 @@ class FakeStorageService(
     }
 
     private companion object {
-        fun createTempDirectory(): File =
-            File.createTempFile("omnideck-fake-storage", "").let { probe ->
-                probe.delete()
-                probe.apply { mkdirs() }
-            }
+        fun createTempDirectory(): File = File.createTempFile("omnideck-fake-storage", "").let { probe ->
+            probe.delete()
+            probe.apply { mkdirs() }
+        }
     }
 }
 
@@ -130,9 +129,7 @@ class FakeStorageService(
  * temp file: no disk I/O, no scope to clean up, and updates are visible immediately,
  * which keeps assertions free of arbitrary waits.
  */
-class InMemoryPreferencesDataStore(
-    initial: Preferences = emptyPreferences(),
-) : DataStore<Preferences> {
+class InMemoryPreferencesDataStore(initial: Preferences = emptyPreferences()) : DataStore<Preferences> {
 
     private val state = MutableStateFlow(initial)
 
@@ -142,13 +139,12 @@ class InMemoryPreferencesDataStore(
 
     override val data: Flow<Preferences> = state.asStateFlow()
 
-    override suspend fun updateData(
-        transform: suspend (t: Preferences) -> Preferences,
-    ): Preferences = writeLock.withLock {
-        val updated = transform(state.value)
-        state.value = updated
-        updated
-    }
+    override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences =
+        writeLock.withLock {
+            val updated = transform(state.value)
+            state.value = updated
+            updated
+        }
 
     /** Drops everything back to empty. Used by [FakeStorageService.clear]. */
     fun reset() {

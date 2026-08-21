@@ -98,10 +98,9 @@ class FakeMediaService(
     }
 
     private companion object {
-        fun createTempDirectory(): File =
-            File.createTempFile("omnideck-fake-media", "").let { probe ->
-                probe.delete()
-                probe.apply { mkdirs() }
-            }
+        fun createTempDirectory(): File = File.createTempFile("omnideck-fake-media", "").let { probe ->
+            probe.delete()
+            probe.apply { mkdirs() }
+        }
     }
 }

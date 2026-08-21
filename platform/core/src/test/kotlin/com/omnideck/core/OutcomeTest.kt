@@ -59,7 +59,10 @@ class OutcomeTest {
         var ran = false
         val original: Outcome<Int> = Outcome.Failure(OmniError.Timeout)
 
-        val mapped = original.map { ran = true; it * 3 }
+        val mapped = original.map {
+            ran = true
+            it * 3
+        }
 
         assertThat(ran).isFalse()
         assertThat(mapped).isSameInstanceAs(original)
@@ -77,7 +80,10 @@ class OutcomeTest {
         var ran = false
         val original: Outcome<Int> = Outcome.Failure(OmniError.NotFound)
 
-        val chained = original.flatMap { ran = true; Outcome.Success(it) }
+        val chained = original.flatMap {
+            ran = true
+            Outcome.Success(it)
+        }
 
         assertThat(ran).isFalse()
         assertThat(chained).isSameInstanceAs(original)

@@ -61,6 +61,12 @@ jobs:
       - name: Coverage report
         run: ./gradlew koverXmlReport koverHtmlReport --stacktrace
 
+      # Blocking from the Phase 1 exit gate: platform:* must hold >= 80% line
+      # coverage. Projects with no test source set report without failing, so a
+      # module's first build is never red for coverage it never claimed to have.
+      - name: Coverage verification
+        run: ./gradlew koverVerify --stacktrace
+
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
