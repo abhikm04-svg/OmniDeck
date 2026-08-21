@@ -36,5 +36,8 @@ local.properties
 # ---------------------------------------------------------------------------
 .kotlin/
 
+# Scratch build logs (./gradlew build *> build_log.txt and friends).
+*_log.txt
+
 # Play upload key must never live in the repo (architecture.md §12.3) — CI
 # injects it from KMS/secrets, never from a file here.
