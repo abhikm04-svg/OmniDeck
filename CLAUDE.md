@@ -75,11 +75,18 @@ open — run `./gradlew --stop` first.
   by the report tasks and ignored by the gate, and a project extension read in `afterEvaluate`
   resolved on a developer machine but came back empty on CI for one project and not another.
   A mistyped key is fail-safe (the lines return to the denominator and the gate goes red).
+- **`koverVerify`'s verdict and the published number are cross-checked** by
+  `scripts/verify-coverage.py`, which parses each `report.xml` and enforces the same floors
+  independently. They are not the same thing: across three CI runs a passing `koverVerify` sat
+  beside a `report.xml` reading 75.8% against an 80% floor, with `koverXmlReport` and
+  `koverHtmlReport` disagreeing from one invocation and every task executing fresh. Reports and
+  gate now run in a single Gradle invocation, and a divergence fails the build rather than
+  passing quietly. If you change the exclusions, check the script's output, not just a green tick.
 - **A green `koverVerify` proves nothing unless it actually ran.** `koverCachedVerify` reports
   `UP-TO-DATE` and reuses a previous verdict even after the exclusions change, because the
   filter configuration is not one of its inputs. That produced two false greens here. Confirm a
-  coverage claim with `./gradlew :platform:kernel:koverXmlReport :platform:kernel:koverCachedVerify --rerun`
-  and read the counter out of `report.xml`; never trust an up-to-date pass.
+  coverage claim with `./gradlew koverXmlReport koverVerify` followed by
+  `python scripts/verify-coverage.py`; never trust an up-to-date pass.
 - **Warnings are errors** for Kotlin/Java everywhere; Android Lint runs `warningsAsErrors` with
   `checkDependencies`. Escape hatch for local iteration only: `-Pomnideck.warningsAsErrors=false`.
 - **Configuration cache is on with `problems=fail`** — Gradle code that reads project state at

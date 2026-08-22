@@ -89,14 +89,23 @@ jobs:
           path: '**/build/outputs/roborazzi/**'
           retention-days: 14
 
-      - name: Coverage report
-        run: ./gradlew koverXmlReport koverHtmlReport --stacktrace
-
       # Blocking from the Phase 1 exit gate: platform:* must hold >= 80% line
       # coverage. Projects with no test source set report without failing, so a
       # module's first build is never red for coverage it never claimed to have.
-      - name: Coverage verification
-        run: ./gradlew koverVerify --stacktrace
+      #
+      # Reports and gate run in ONE invocation, deliberately. Split across two, the
+      # same commit produced a passing koverVerify alongside a report.xml showing
+      # 75.8% against the 80% floor, with koverXmlReport and koverHtmlReport
+      # disagreeing with each other — every task executing fresh, no cache hits.
+      - name: Coverage report and verification
+        run: ./gradlew koverXmlReport koverHtmlReport koverVerify --stacktrace
+
+      # Independent cross-check of the artifact humans actually read, against the
+      # same floors in gradle.properties. koverVerify's verdict and the published
+      # number are not the same thing — this fails the build when they diverge,
+      # instead of the divergence passing silently as it did three runs running.
+      - name: Assert published coverage matches the floors
+        run: python3 scripts/verify-coverage.py
 
       - name: Upload reports
         if: always()
