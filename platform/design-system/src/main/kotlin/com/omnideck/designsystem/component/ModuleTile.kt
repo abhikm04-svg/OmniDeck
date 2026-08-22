@@ -44,10 +44,15 @@ fun ModuleTile(title: String, subtitle: String, state: TileState, onClick: () ->
             .fillMaxWidth()
             .clearAndSetSemantics { contentDescription = "$title. $subtitle. ${state.accessibilityLabel}" },
         colors = CardDefaults.cardColors(
-            containerColor = when (state) {
-                is TileState.Quarantined -> MaterialTheme.colorScheme.errorContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            },
+            containerColor = tileContainerColor(state),
+            contentColor = tileContentColor(state),
+            // Both halves are needed. A quarantined or installing tile is disabled,
+            // and a disabled Card ignores `containerColor` in favour of
+            // `disabledContainerColor` — so setting only the former silently dropped
+            // the error styling on the one state that most needs to look different.
+            // Caught by the OD-113 screenshot, invisible in code review.
+            disabledContainerColor = tileContainerColor(state),
+            disabledContentColor = tileContentColor(state),
         ),
     ) {
         Column(Modifier.padding(Spacing.md)) {
@@ -92,6 +97,22 @@ fun ModuleTile(title: String, subtitle: String, state: TileState, onClick: () ->
             }
         }
     }
+}
+
+/**
+ * Quarantine is the one state that must read as "something is wrong" at a glance, so
+ * it takes the error container; everything else sits on the ordinary surface.
+ */
+@Composable
+private fun tileContainerColor(state: TileState) = when (state) {
+    is TileState.Quarantined -> MaterialTheme.colorScheme.errorContainer
+    else -> MaterialTheme.colorScheme.surfaceVariant
+}
+
+@Composable
+private fun tileContentColor(state: TileState) = when (state) {
+    is TileState.Quarantined -> MaterialTheme.colorScheme.onErrorContainer
+    else -> MaterialTheme.colorScheme.onSurfaceVariant
 }
 
 /** UI projection of `ModuleState` — deliberately smaller than the full state machine. */

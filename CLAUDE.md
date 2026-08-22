@@ -68,8 +68,25 @@ open — run `./gradlew --stop` first.
   `OmniDeckRawPermission` bans direct permission calls (go through `PermissionBroker`).
 - **Coverage floors** — 80% for `:platform:*`, 70% for `:modules:*` (`gradle.properties`). A
   project with no `src/test` or `src/androidTest` warns instead of failing, and inherits the
-  floor the moment a test source set appears. Exclusions are narrow and documented next to the
-  reason (see `platform/kernel/build.gradle.kts`).
+  floor the moment a test source set appears. Exclusions are narrow, live in the root
+  `gradle.properties` keyed by project path, and each is documented next to its reason there —
+  they are *not* declared in the project's own build file, where both shapes tried before failed
+  silently. Prefer covering code to excluding it: Kover's filters proved to reach `koverVerify`
+  and `koverXmlReport` inconsistently on Linux, so an exclusion buys a number you then cannot
+  reconcile with the published report. The kernel's untestable Keystore lines are counted against
+  it rather than filtered out, for exactly that reason. A mistyped key is fail-safe.
+- **`koverVerify`'s verdict and the published number are cross-checked** by
+  `scripts/verify-coverage.py`, which parses each `report.xml` and enforces the same floors
+  independently. They are not the same thing: across three CI runs a passing `koverVerify` sat
+  beside a `report.xml` reading 75.8% against an 80% floor, with `koverXmlReport` and
+  `koverHtmlReport` disagreeing from one invocation and every task executing fresh. Reports and
+  gate now run in a single Gradle invocation, and a divergence fails the build rather than
+  passing quietly. If you change the exclusions, check the script's output, not just a green tick.
+- **A green `koverVerify` proves nothing unless it actually ran.** `koverCachedVerify` reports
+  `UP-TO-DATE` and reuses a previous verdict even after the exclusions change, because the
+  filter configuration is not one of its inputs. That produced two false greens here. Confirm a
+  coverage claim with `./gradlew koverXmlReport koverVerify` followed by
+  `python scripts/verify-coverage.py`; never trust an up-to-date pass.
 - **Warnings are errors** for Kotlin/Java everywhere; Android Lint runs `warningsAsErrors` with
   `checkDependencies`. Escape hatch for local iteration only: `-Pomnideck.warningsAsErrors=false`.
 - **Configuration cache is on with `problems=fail`** — Gradle code that reads project state at

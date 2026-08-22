@@ -9,35 +9,11 @@ android {
     namespace = "com.omnideck.kernel"
 }
 
-// ---------------------------------------------------------------------------
-// Coverage exclusion, deliberate and narrow.
-//
-// SecureStoreImpl talks to the Android Keystore, which has no JVM provider and is
-// not implemented by Robolectric: its crypto cannot execute in a unit test at all.
-// It IS tested — src/androidTest/.../SecureStoreImplTest.kt covers the encrypt and
-// decrypt round trip, per-module key isolation, alias sanitisation and the absence
-// of plaintext on disk — but instrumented runs need a device, so Kover (which
-// measures unit tests) never sees that coverage.
-//
-// Leaving it in the denominator would mean the kernel's number understates how much
-// is actually verified, and the only ways to fix that are worse: wiring on-device
-// JaCoCo into every PR, or lowering the floor for every module. So it is excluded
-// here, next to the reason, rather than by dropping the floor.
-//
-// Run the real thing with:  ./gradlew :platform:kernel:connectedDebugAndroidTest
-// ---------------------------------------------------------------------------
-kover {
-    reports {
-        filters {
-            excludes {
-                // The trailing wildcard is load-bearing: each `suspend` function
-                // compiles to its own SecureStoreImpl$put$2 continuation class, and an
-                // exact-name filter leaves those in the denominator as uncovered lines.
-                classes("com.omnideck.kernel.services.SecureStoreImpl", "com.omnideck.kernel.services.SecureStoreImpl\$*")
-            }
-        }
-    }
-}
+// Coverage: SecureStoreImpl's Keystore code cannot run in a unit test and is NOT
+// excluded from the denominator — the kernel clears the 80% floor with those lines
+// counted against it. See the note in the root gradle.properties for why excluding
+// them was abandoned. The code itself is verified on a device:
+//   ./gradlew :platform:kernel:connectedDebugAndroidTest
 
 description =
     """

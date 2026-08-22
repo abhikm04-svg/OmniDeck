@@ -68,37 +68,78 @@ class QualityConventionPlugin : Plugin<Project> {
             else -> null
         }?.toInt()
 
+        // Per-project exclusions live in the root gradle.properties, keyed by project
+        // path, and are resolved *here* — at configuration time, into a plain List —
+        // rather than in the project's own build file.
+        //
+        // Two earlier shapes of this both failed silently. A `kover { }` block in the
+        // project's build file is honoured by the report tasks and ignored by
+        // koverVerify, which produced a build where the report said 81.1% and the gate
+        // said 75.8% on the same commit. Replacing it with a project extension read
+        // inside afterEvaluate then worked on a developer machine and came back empty
+        // on CI for :platform:kernel while working for :platform:design-system — same
+        // commit, same code path, different answer, so nothing about the timing of an
+        // extension read can be relied on. A root property has no such ordering: it is
+        // available before any project is evaluated, and it is the mechanism the
+        // coverage floors above already use, which is the one thing here proven to
+        // behave identically in both places.
+        //
+        // A typo in a key is fail-safe: the exclusion silently does not apply, the
+        // uncovered lines come back into the denominator and the gate goes red.
+        val coverageKey = path.removePrefix(":").replace(':', '.')
+        val excludedClasses = gradlePropertyList("omnideck.coverage.excludeClasses.$coverageKey")
+        val excludedAnnotations = gradlePropertyList("omnideck.coverage.excludeAnnotatedBy.$coverageKey")
+
         if (minCoverage != null) {
             val hasTests = file("src/test").isDirectory || file("src/androidTest").isDirectory
-            extensions.configure(KoverProjectExtension::class.java) {
-                reports {
-                    filters {
-                        excludes {
-                            // Code we do not author. Dagger/Hilt factories and
-                            // component plumbing are generated from annotations and
-                            // covered by Dagger's own test suite; counting them
-                            // measures how much generated boilerplate a module has,
-                            // not how well its behaviour is tested.
-                            classes(
-                                "*_Factory",
-                                "*_Factory\$*",
-                                "*_MembersInjector",
-                                "*_HiltModules*",
-                                "*_ProvideFactory",
-                                "*_ComponentTreeDeps",
-                                "Hilt_*",
-                                "*.Hilt_*",
-                                // Compose and Kotlin synthetics.
-                                "*ComposableSingletons*",
-                                "*\$\$serializer",
-                            )
-                            annotatedBy("javax.annotation.processing.Generated", "dagger.internal.DaggerGenerated")
+
+            // Deferred only because Kover's own extension is not in place until the
+            // Kover plugin has been applied. The exclusion values above are already
+            // resolved by this point and are not read from project state here.
+            afterEvaluate {
+                extensions.configure(KoverProjectExtension::class.java) {
+                    reports {
+                        filters {
+                            excludes {
+                                // Code we do not author. Dagger/Hilt factories and
+                                // component plumbing are generated from annotations
+                                // and covered by Dagger's own test suite; counting
+                                // them measures how much generated boilerplate a
+                                // module has, not how well its behaviour is tested.
+                                classes(
+                                    "*_Factory",
+                                    "*_Factory\$*",
+                                    "*_MembersInjector",
+                                    "*_HiltModules*",
+                                    "*_ProvideFactory",
+                                    "*_ComponentTreeDeps",
+                                    "Hilt_*",
+                                    "*.Hilt_*",
+                                    // Compose and Kotlin synthetics.
+                                    "*ComposableSingletons*",
+                                    "*\$\$serializer",
+                                )
+                                annotatedBy(
+                                    "javax.annotation.processing.Generated",
+                                    "dagger.internal.DaggerGenerated",
+                                )
+
+                                // Passed as whole lists in a single call each. The
+                                // per-element forEach form these replaced reached
+                                // koverHtmlReport and koverVerify but not
+                                // koverXmlReport on Linux, while the literal classes()
+                                // call above reached all three — so the XML report
+                                // alone showed SecureStoreImpl back in the denominator
+                                // at 75.8% while the gate and the HTML agreed at 81.1%.
+                                classes(*excludedClasses.toTypedArray())
+                                annotatedBy(*excludedAnnotations.toTypedArray())
+                            }
                         }
-                    }
-                    verify {
-                        warningInsteadOfFailure.set(!hasTests)
-                        rule("Minimum line coverage for $path") {
-                            minBound(minCoverage)
+                        verify {
+                            warningInsteadOfFailure.set(!hasTests)
+                            rule("Minimum line coverage for $path") {
+                                minBound(minCoverage)
+                            }
                         }
                     }
                 }
@@ -274,3 +315,18 @@ abstract class CheckArchitectureTask : DefaultTask() {
         )
     }
 }
+
+/**
+ * Reads a comma-separated Gradle property into a list, dropping blanks.
+ *
+ * Used for the per-project coverage exclusions. These are narrow and documented next
+ * to their reason in gradle.properties, never broad: an exclusion is warranted when
+ * code genuinely cannot be measured by a unit test — Android Keystore, Compose under
+ * Robolectric — and is verified some other way. It is never a substitute for the test.
+ */
+private fun Project.gradlePropertyList(name: String): List<String> =
+    providers.gradleProperty(name).orNull
+        ?.split(',')
+        ?.map(String::trim)
+        ?.filter(String::isNotEmpty)
+        .orEmpty()

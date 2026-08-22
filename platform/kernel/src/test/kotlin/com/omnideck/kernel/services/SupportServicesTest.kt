@@ -153,6 +153,53 @@ class SupportServicesTest {
             .isEqualTo(1)
     }
 
+    @Test
+    fun `cancelAll clears this module's notifications and leaves another module's alone`() = runTest {
+        // Used by quarantine and by purge. If it over-reached, disabling one
+        // misbehaving module would silently clear notifications for all of them; if it
+        // under-reached, a quarantined module would keep a notification on screen it
+        // can no longer be tapped through to.
+        val notesNotifications = notifications(notes)
+        notesNotifications.post(spec(id = 1))
+        notesNotifications.post(spec(id = 2))
+        notifications(finance, "Finance").post(spec(id = 1))
+
+        notesNotifications.cancelAll()
+
+        val remaining = shadowOf(context.getSystemService(NotificationManager::class.java))
+        assertThat(remaining.size()).isEqualTo(1)
+    }
+
+    @Test
+    fun `ensurePermission reports the broker's verdict rather than assuming a grant`() = runTest {
+        val broker = com.omnideck.testing.FakePermissionBroker()
+        val service = NotificationServiceImpl(context, notes, "Notes", broker)
+        val rationale = com.omnideck.sdk.capability.PermissionBroker.Rationale(
+            title = "Reminders",
+            message = "Notes needs to alert you when a reminder is due.",
+            purpose = "reminder delivery",
+        )
+
+        assertThat(service.ensurePermission(rationale)).isTrue()
+        assertThat(broker.requested).contains(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    @Test
+    fun `a denied notification permission is reported as false, not thrown`() = runTest {
+        // A module asking for permission it does not get must be able to carry on. An
+        // exception here would push that handling into every caller.
+        val broker = com.omnideck.testing.FakePermissionBroker().apply {
+            result = com.omnideck.sdk.capability.PermissionBroker.PermissionResult.DENIED
+        }
+        val service = NotificationServiceImpl(context, notes, "Notes", broker)
+
+        val granted = service.ensurePermission(
+            com.omnideck.sdk.capability.PermissionBroker.Rationale("t", "m", "p"),
+        )
+
+        assertThat(granted).isFalse()
+    }
+
     // -- work ---------------------------------------------------------------
 
     private fun workSpec(name: String) = WorkScheduler.WorkSpec(

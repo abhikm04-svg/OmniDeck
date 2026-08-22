@@ -11,7 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val BrandSeedLight = lightColorScheme(
+/**
+ * Internal rather than private so the contrast assertions in `ThemeTest` can reach
+ * it. A palette that fails WCAG AA is invisible until an audit, and by then it is in
+ * every module (OD-114, QA-12).
+ */
+internal val BrandSeedLight = lightColorScheme(
     primary = Color(0xFF2A5DB0),
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFD8E2FF),
@@ -25,7 +30,7 @@ private val BrandSeedLight = lightColorScheme(
     outline = Color(0xFF757780),
 )
 
-private val BrandSeedDark = darkColorScheme(
+internal val BrandSeedDark = darkColorScheme(
     primary = Color(0xFFADC6FF),
     onPrimary = Color(0xFF002E69),
     primaryContainer = Color(0xFF004494),
