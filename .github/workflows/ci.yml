@@ -97,8 +97,15 @@ jobs:
       # same commit produced a passing koverVerify alongside a report.xml showing
       # 75.8% against the 80% floor, with koverXmlReport and koverHtmlReport
       # disagreeing with each other — every task executing fresh, no cache hits.
+      #
+      # --no-configuration-cache is under test here, not settled. Every filter that
+      # reaches koverXmlReport on Linux is a compile-time constant in a literal
+      # classes() call; the ones that do not are values computed at configuration time
+      # and carried into the task through the configuration cache. Pattern shape has
+      # been ruled out (an exact name, a '$' wildcard and a plain trailing wildcard all
+      # failed identically), which leaves serialisation as the difference worth testing.
       - name: Coverage report and verification
-        run: ./gradlew koverXmlReport koverHtmlReport koverVerify --stacktrace
+        run: ./gradlew koverXmlReport koverHtmlReport koverVerify --stacktrace --no-configuration-cache
 
       # Independent cross-check of the artifact humans actually read, against the
       # same floors in gradle.properties. koverVerify's verdict and the published
