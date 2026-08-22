@@ -68,8 +68,18 @@ open — run `./gradlew --stop` first.
   `OmniDeckRawPermission` bans direct permission calls (go through `PermissionBroker`).
 - **Coverage floors** — 80% for `:platform:*`, 70% for `:modules:*` (`gradle.properties`). A
   project with no `src/test` or `src/androidTest` warns instead of failing, and inherits the
-  floor the moment a test source set appears. Exclusions are narrow and documented next to the
-  reason (see `platform/kernel/build.gradle.kts`).
+  floor the moment a test source set appears. Exclusions are narrow, live in the root
+  `gradle.properties` keyed by project path (`omnideck.coverage.excludeClasses.platform.kernel`),
+  and each is documented next to its reason there. They are *not* declared in the project's own
+  build file: both shapes of that tried before failed silently — a `kover { }` block is honoured
+  by the report tasks and ignored by the gate, and a project extension read in `afterEvaluate`
+  resolved on a developer machine but came back empty on CI for one project and not another.
+  A mistyped key is fail-safe (the lines return to the denominator and the gate goes red).
+- **A green `koverVerify` proves nothing unless it actually ran.** `koverCachedVerify` reports
+  `UP-TO-DATE` and reuses a previous verdict even after the exclusions change, because the
+  filter configuration is not one of its inputs. That produced two false greens here. Confirm a
+  coverage claim with `./gradlew :platform:kernel:koverXmlReport :platform:kernel:koverCachedVerify --rerun`
+  and read the counter out of `report.xml`; never trust an up-to-date pass.
 - **Warnings are errors** for Kotlin/Java everywhere; Android Lint runs `warningsAsErrors` with
   `checkDependencies`. Escape hatch for local iteration only: `-Pomnideck.warningsAsErrors=false`.
 - **Configuration cache is on with `problems=fail`** — Gradle code that reads project state at

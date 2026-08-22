@@ -124,8 +124,15 @@ class QualityConventionPlugin : Plugin<Project> {
                                     "dagger.internal.DaggerGenerated",
                                 )
 
-                                excludedClasses.forEach { classes(it) }
-                                excludedAnnotations.forEach { annotatedBy(it) }
+                                // Passed as whole lists in a single call each. The
+                                // per-element forEach form these replaced reached
+                                // koverHtmlReport and koverVerify but not
+                                // koverXmlReport on Linux, while the literal classes()
+                                // call above reached all three — so the XML report
+                                // alone showed SecureStoreImpl back in the denominator
+                                // at 75.8% while the gate and the HTML agreed at 81.1%.
+                                classes(*excludedClasses.toTypedArray())
+                                annotatedBy(*excludedAnnotations.toTypedArray())
                             }
                         }
                         verify {
