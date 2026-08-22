@@ -26,25 +26,11 @@ roborazzi {
     outputDir.set(layout.projectDirectory.dir("src/test/screenshots"))
 }
 
-// ---------------------------------------------------------------------------
-// Coverage exclusion, deliberate and narrow.
-//
-// Kover does not credit code run through Compose's runtime under Robolectric. The
-// evidence is unambiguous: plain property initializers in Tokens.kt report 0% despite
-// every screenshot depending on them, while the module's ordinary Kotlin (TileState,
-// WindowWidthClass, Spacing) reports 100% from the same test run.
-//
-// Excluded by annotation rather than by file, so the pure functions that share a file
-// with a composable — the adaptive layout rules — stay measured. Leaving composables
-// in would make the number measure how much of the module is UI rather than how well
-// it is tested, and the honest response to that is not to lower the floor for everyone.
-//
-// What actually verifies this code is the screenshot gate:
-//   ./gradlew :platform:design-system:verifyRoborazziDebug
-// ---------------------------------------------------------------------------
-omnideckCoverage {
-    excludedAnnotations.add("androidx.compose.runtime.Composable")
-}
+// Coverage: @Composable-annotated code is excluded from the denominator because Kover
+// does not credit code run through Compose's runtime under Robolectric. The exclusion
+// and the full reasoning live in the root gradle.properties
+// (omnideck.coverage.excludeAnnotatedBy.platform.design-system). What actually verifies
+// this code is the screenshot gate above.
 
 description = "Shared Material 3 theme and components. Goal G4 — one look and feel across every module."
 

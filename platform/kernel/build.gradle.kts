@@ -9,27 +9,12 @@ android {
     namespace = "com.omnideck.kernel"
 }
 
-// ---------------------------------------------------------------------------
-// Coverage exclusion, deliberate and narrow.
-//
-// SecureStoreImpl talks to the Android Keystore, which has no JVM provider and is not
-// implemented by Robolectric: its crypto cannot execute in a unit test at all. It IS
-// tested — src/androidTest/.../SecureStoreImplTest.kt covers the encrypt/decrypt round
-// trip, per-module key isolation, alias sanitisation and the absence of plaintext on
-// disk — but instrumented runs need a device, so Kover never sees that coverage.
-//
-// The trailing wildcard is load-bearing: each suspend function compiles to its own
-// SecureStoreImpl$put$2 continuation class, and an exact-name filter leaves four of
-// them counted as uncovered.
-//
-// Run the real thing with:  ./gradlew :platform:kernel:connectedDebugAndroidTest
-// ---------------------------------------------------------------------------
-omnideckCoverage {
-    excludedClasses.addAll(
-        "com.omnideck.kernel.services.SecureStoreImpl",
-        "com.omnideck.kernel.services.SecureStoreImpl\$*",
-    )
-}
+// Coverage: SecureStoreImpl is excluded from the denominator because the Android
+// Keystore cannot execute in a unit test. The exclusion and the full reasoning live in
+// the root gradle.properties (omnideck.coverage.excludeClasses.platform.kernel); it is
+// declared there rather than here because a per-project declaration was honoured by the
+// report tasks and ignored by the gate. The code is covered by the instrumented test:
+//   ./gradlew :platform:kernel:connectedDebugAndroidTest
 
 description =
     """
