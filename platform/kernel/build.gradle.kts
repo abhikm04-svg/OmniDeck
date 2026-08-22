@@ -9,11 +9,10 @@ android {
     namespace = "com.omnideck.kernel"
 }
 
-// Coverage: SecureStoreImpl is excluded from the denominator because the Android
-// Keystore cannot execute in a unit test. The exclusion and the full reasoning live in
-// the root gradle.properties (omnideck.coverage.excludeClasses.platform.kernel); it is
-// declared there rather than here because a per-project declaration was honoured by the
-// report tasks and ignored by the gate. The code is covered by the instrumented test:
+// Coverage: SecureStoreImpl's Keystore code cannot run in a unit test and is NOT
+// excluded from the denominator — the kernel clears the 80% floor with those lines
+// counted against it. See the note in the root gradle.properties for why excluding
+// them was abandoned. The code itself is verified on a device:
 //   ./gradlew :platform:kernel:connectedDebugAndroidTest
 
 description =

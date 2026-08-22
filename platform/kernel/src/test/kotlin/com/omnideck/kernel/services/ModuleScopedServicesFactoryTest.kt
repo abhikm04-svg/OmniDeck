@@ -134,6 +134,34 @@ class ModuleScopedServicesFactoryTest {
     }
 
     @Test
+    fun `every declared capability is actually built, not merely permitted`() {
+        // The mirror of the refusal sweep above, and the half that catches the
+        // opposite failure: an accessor that passes the gate and then blows up while
+        // constructing the service reads to a module as a working capability right up
+        // until first use, which is the worst moment to find out.
+        //
+        // secureStore is absent on purpose — the Android Keystore has no Robolectric
+        // implementation, so building it here would fail for a reason that has nothing
+        // to do with the boundary. It is covered by SecureStoreImplTest on a device.
+        val services = factory().create(manifest(required = CapabilityId.KERNEL_PROVIDED))
+
+        val built = listOf<Pair<String, () -> Any?>>(
+            "storage" to { services.storage },
+            "network" to { services.network },
+            "work" to { services.work },
+            "permissions" to { services.permissions },
+            "notifications" to { services.notifications },
+            "media" to { services.media },
+            "auth" to { services.auth },
+            "billing" to { services.billing },
+        ).map { (name, access) -> name to runCatching(access) }
+
+        val broken = built.filter { it.second.isFailure }.map { "${it.first}: ${it.second.exceptionOrNull()}" }
+        assertThat(broken).isEmpty()
+        assertThat(built.map { it.second.getOrNull() }).doesNotContain(null)
+    }
+
+    @Test
     fun `ungated capabilities are always available`() {
         // Telemetry, flags, events, consent, locale and router are unconditional: a
         // module that cannot report a crash or read a kill switch is worse than one

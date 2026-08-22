@@ -69,12 +69,12 @@ open — run `./gradlew --stop` first.
 - **Coverage floors** — 80% for `:platform:*`, 70% for `:modules:*` (`gradle.properties`). A
   project with no `src/test` or `src/androidTest` warns instead of failing, and inherits the
   floor the moment a test source set appears. Exclusions are narrow, live in the root
-  `gradle.properties` keyed by project path (`omnideck.coverage.excludeClasses.platform.kernel`),
-  and each is documented next to its reason there. They are *not* declared in the project's own
-  build file: both shapes of that tried before failed silently — a `kover { }` block is honoured
-  by the report tasks and ignored by the gate, and a project extension read in `afterEvaluate`
-  resolved on a developer machine but came back empty on CI for one project and not another.
-  A mistyped key is fail-safe (the lines return to the denominator and the gate goes red).
+  `gradle.properties` keyed by project path, and each is documented next to its reason there —
+  they are *not* declared in the project's own build file, where both shapes tried before failed
+  silently. Prefer covering code to excluding it: Kover's filters proved to reach `koverVerify`
+  and `koverXmlReport` inconsistently on Linux, so an exclusion buys a number you then cannot
+  reconcile with the published report. The kernel's untestable Keystore lines are counted against
+  it rather than filtered out, for exactly that reason. A mistyped key is fail-safe.
 - **`koverVerify`'s verdict and the published number are cross-checked** by
   `scripts/verify-coverage.py`, which parses each `report.xml` and enforces the same floors
   independently. They are not the same thing: across three CI runs a passing `koverVerify` sat
