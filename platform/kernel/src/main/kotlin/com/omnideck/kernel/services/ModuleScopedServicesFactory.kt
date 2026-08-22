@@ -79,6 +79,17 @@ class ModuleScopedServicesFactory @Inject constructor(
         }
     }
 
+    /**
+     * Bytes this module occupies on the device.
+     *
+     * Read by the Privacy Centre (OD-207). It goes through the same namespaced
+     * storage the module itself was given, so the number a user is shown is the same
+     * directory that "delete this module's data" erases — not an estimate that can
+     * drift from it.
+     */
+    suspend fun usageBytes(moduleId: ModuleId): Long =
+        storages.getOrPut(moduleId) { StorageServiceImpl(context, moduleId, dispatchers) }.usageBytes()
+
     fun cancelWork(moduleId: ModuleId) {
         workers.getOrPut(moduleId) { WorkSchedulerImpl(context, moduleId) }.cancelAll()
     }

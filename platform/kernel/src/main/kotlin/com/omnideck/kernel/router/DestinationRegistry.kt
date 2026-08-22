@@ -28,11 +28,25 @@ class MutableDestinationRegistry @Inject constructor() {
     private val _destinations = MutableStateFlow<List<Destination>>(emptyList())
     val destinations: StateFlow<List<Destination>> = _destinations.asStateFlow()
 
+    private val _degradedBanners = MutableStateFlow<Map<ModuleId, @Composable (String) -> Unit>>(emptyMap())
+
+    /**
+     * Per-module advisory banners for [com.omnideck.sdk.ModuleState.DEGRADED].
+     *
+     * Note the framing: a degraded module still renders its own content, with this
+     * shown *above* it. `ModuleInitResult.Degraded` promises the user is not blocked
+     * ("usable, but something is missing"), so replacing the module's UI with a
+     * fallback screen would contradict the contract it was returned under. The Shell
+     * supplies a generic banner for modules that register none.
+     */
+    val degradedBanners: StateFlow<Map<ModuleId, @Composable (String) -> Unit>> = _degradedBanners.asStateFlow()
+
     /** A view that attributes every registration to [moduleId] and validates ownership. */
     fun scopedTo(moduleId: ModuleId): DestinationRegistry = ScopedRegistry(moduleId)
 
     fun removeAll(moduleId: ModuleId) {
         _destinations.value = _destinations.value.filterNot { it.owner == moduleId }
+        _degradedBanners.value = _degradedBanners.value - moduleId
     }
 
     /** Best match for [route]: literal segments win over placeholders. */
@@ -61,6 +75,10 @@ class MutableDestinationRegistry @Inject constructor() {
             }
 
             _destinations.value = _destinations.value + Destination(moduleId, routePattern, content)
+        }
+
+        override fun degradedFallback(content: @Composable (reason: String) -> Unit) {
+            _degradedBanners.value = _degradedBanners.value + (moduleId to content)
         }
     }
 }

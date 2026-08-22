@@ -62,6 +62,9 @@ jobs:
       - name: SDK binary compatibility
         run: ./gradlew apiCheck --stacktrace
 
+      # Includes the plug-and-play fitness test (OD-212) and the Shell-isolation one:
+      # the Phase 2 exit gate — "adding a module changes no Shell file" — is checked
+      # mechanically here, rather than by someone reading a PR diff.
       - name: Unit tests
         run: ./gradlew test --stacktrace
 

@@ -58,6 +58,10 @@ gradlePlugin {
             id = "omnideck.jvm.library"
             implementationClass = "com.omnideck.build.JvmLibraryConventionPlugin"
         }
+        register("tooling") {
+            id = "omnideck.tooling"
+            implementationClass = "com.omnideck.build.ModuleScaffoldPlugin"
+        }
         register("quality") {
             id = "omnideck.quality"
             implementationClass = "com.omnideck.build.QualityConventionPlugin"

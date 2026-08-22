@@ -81,6 +81,20 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                     )
                     signingConfigs.findByName("release")?.let { signingConfig = it }
                 }
+
+                // OD-213/214. Macrobenchmark and Baseline Profile generation both run
+                // against a build that is shaped like release — minified, not
+                // debuggable — because measuring a debug build measures the debugger,
+                // and a profile recorded against unminified code names methods R8 has
+                // since renamed. It is signed with the debug key so it installs on a
+                // developer's device without release credentials.
+                create("benchmark") {
+                    initWith(getByName("release"))
+                    signingConfig = signingConfigs.getByName("debug")
+                    matchingFallbacks += listOf("release")
+                    isDebuggable = false
+                    versionNameSuffix = "-benchmark"
+                }
             }
 
             bundle {
@@ -100,6 +114,19 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
 
         dependencies.apply {
             bundled.forEach { add("implementation", project(":modules:$it")) }
+        }
+
+        // OD-202. The aggregating half of the module processor: it reads the factory
+        // objects each bundled module's own KSP pass emitted and writes the static
+        // registry the Shell uses instead of Class.forName (architecture.md §7.2).
+        //
+        // Deferred until KSP is applied, because `omnideck.hilt` — not this plugin —
+        // is what brings KSP in, and it is applied afterwards by :app's build file.
+        pluginManager.withPlugin("com.google.devtools.ksp") {
+            dependencies.add("ksp", project(":tools:module-processor"))
+            extensions.configure(com.google.devtools.ksp.gradle.KspExtension::class.java) {
+                arg("omnideck.aggregateModules", "true")
+            }
         }
 
         logger.lifecycle(

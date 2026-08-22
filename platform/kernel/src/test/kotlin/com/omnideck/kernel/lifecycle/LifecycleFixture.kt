@@ -1,6 +1,7 @@
 package com.omnideck.kernel.lifecycle
 
 import com.omnideck.core.DispatcherProvider
+import com.omnideck.core.MutableClock
 import com.omnideck.kernel.loader.ModuleDescriptor
 import com.omnideck.kernel.loader.ModuleProvider
 import com.omnideck.kernel.registry.CapabilityRegistryImpl
@@ -165,6 +166,7 @@ internal class LifecycleFixture(
 ) {
     val telemetry = FakeTelemetryService()
     val flags = FakeFeatureFlagService()
+    val clock = MutableClock(startMillis = 1_000)
     val events = FakeEventBus()
     val destinations = MutableDestinationRegistry()
     val capabilities = CapabilityRegistryImpl()
@@ -193,6 +195,7 @@ internal class LifecycleFixture(
         events = events,
         hostInfo = HostInfo(sdkVersion = hostSdk, versionCode = hostVersionCode),
         dispatchers = dispatchers,
+        clock = clock,
     )
 
     /** Flips the server-side kill switch for [id]. */

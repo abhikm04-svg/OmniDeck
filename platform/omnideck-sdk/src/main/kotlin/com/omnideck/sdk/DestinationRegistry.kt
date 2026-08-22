@@ -10,11 +10,19 @@ import androidx.compose.runtime.Composable
  */
 interface DestinationRegistry {
 
-    /** Registers a destination for an exact or `{placeholder}` route pattern. */
+    /**
+     * Registers a destination for an exact or `{placeholder}` route pattern.
+     *
+     * This is the only overload, deliberately. A convenience
+     * `destination(pattern) { }` taking no [RouteArgs] used to sit beside it and made
+     * every ordinary registration ambiguous — `{ HomeScreen() }` satisfies both
+     * `() -> Unit` and `(RouteArgs) -> Unit`, so the first module written against the
+     * SDK failed to compile on its first destination (OD-209). Nothing is lost: a
+     * lambda that ignores its argument needs no parameter list, so
+     * `destination("omnideck://notes/home") { HomeScreen() }` still reads exactly the
+     * same and now resolves.
+     */
     fun destination(pattern: String, content: @Composable (RouteArgs) -> Unit)
-
-    /** Convenience for destinations that take no arguments. */
-    fun destination(pattern: String, content: @Composable () -> Unit) = destination(pattern) { _ -> content() }
 
     /**
      * A destination shown when the module is [ModuleState.DEGRADED]. Optional; the

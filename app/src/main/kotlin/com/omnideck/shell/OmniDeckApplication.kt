@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import com.google.android.play.core.splitcompat.SplitCompat
+import com.omnideck.kernel.lifecycle.ModuleCrashAttributor
 import com.omnideck.kernel.services.TelemetryHub
 import com.omnideck.kernel.services.TelemetrySignal
 import com.omnideck.sdk.capability.TelemetryService
@@ -17,6 +18,8 @@ class OmniDeckApplication : Application() {
     @Inject lateinit var telemetryHub: TelemetryHub
 
     @Inject lateinit var telemetry: TelemetryService
+
+    @Inject lateinit var crashAttributor: ModuleCrashAttributor
 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
@@ -44,30 +47,28 @@ class OmniDeckApplication : Application() {
     /**
      * QA-6 / architecture.md §12.6.
      *
-     * An in-process module crash is attributed to whichever module owns the topmost
-     * frame in the stack, then handed to the previous handler so Crashlytics still
-     * reports it. Attribution is the prerequisite for per-module error budgets and
-     * for the quarantine counter to mean anything.
+     * An in-process module crash is attributed to the module owning the topmost frame
+     * that belongs to one, then handed to the previous handler so Crashlytics still
+     * reports it. Attribution is the prerequisite for per-module error budgets and for
+     * the quarantine counter to mean anything.
+     *
+     * The matching lives in [ModuleCrashAttributor], against the namespaces of
+     * *discovered* modules. It used to be a hardcoded `com.omnideck.module.` prefix
+     * here — a package no module has ever had, since a module id looks like
+     * `com.omnideck.<name>`, so every crash was silently attributed to the Shell.
      */
     private fun installCrashAttribution() {
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             runCatching {
-                val owner = throwable.stackTrace
-                    .firstOrNull { it.className.startsWith(MODULE_PACKAGE_PREFIX) }
-                    ?.className
                 telemetry.recordError(
                     throwable,
-                    message = "uncaught:${owner ?: "shell"}",
+                    message = "uncaught:${crashAttributor.label(throwable)}",
                     fatal = true,
                 )
             }
             previous?.uncaughtException(thread, throwable)
         }
-    }
-
-    private companion object {
-        const val MODULE_PACKAGE_PREFIX = "com.omnideck.module."
     }
 }
 

@@ -1,5 +1,7 @@
 package com.omnideck.kernel.services
 
+import android.os.Build
+import android.os.Trace
 import com.omnideck.sdk.ModuleId
 import com.omnideck.sdk.capability.ConsentPurpose
 import com.omnideck.sdk.capability.ConsentService
@@ -113,6 +115,25 @@ class TelemetryHub @Inject constructor() {
         override val traceId: String = UUID.randomUUID().toString().replace("-", "").take(32)
 
         private val startedAt = System.nanoTime()
+
+        /**
+         * Also opens a platform trace slice, so the same span a dashboard sees is
+         * visible in Perfetto and measurable by Macrobenchmark (OD-213). The
+         * *asynchronous* form is deliberate: a synchronous slice must begin and end on
+         * one thread, and a span wrapping a coroutine routinely resumes on another —
+         * which corrupts the whole trace, not just this slice.
+         *
+         * API 29+ only; below that the span still reports its duration through
+         * telemetry, it is simply absent from device traces. Every call is a no-op
+         * unless tracing is actually being captured.
+         */
+        private val traceCookie = TRACE_COOKIES.incrementAndGet()
+
+        init {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                Trace.beginAsyncSection(sectionName(), traceCookie)
+            }
+        }
         private val attrs = attributes.toMutableMap()
         private var ok = true
         private var closed = false
@@ -134,6 +155,9 @@ class TelemetryHub @Inject constructor() {
         override fun close() {
             if (closed) return
             closed = true
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                Trace.endAsyncSection(sectionName(), traceCookie)
+            }
             emit(
                 TelemetrySignal.SpanEnd(
                     moduleId = moduleId,
@@ -145,5 +169,15 @@ class TelemetryHub @Inject constructor() {
                 ),
             )
         }
+
+        /** atrace truncates silently past 127 characters, which loses the match. */
+        private fun sectionName(): String = name.take(MAX_TRACE_SECTION_NAME)
+    }
+
+    private companion object {
+        /** Distinguishes overlapping slices with the same name. */
+        val TRACE_COOKIES = java.util.concurrent.atomic.AtomicInteger()
+
+        const val MAX_TRACE_SECTION_NAME = 127
     }
 }

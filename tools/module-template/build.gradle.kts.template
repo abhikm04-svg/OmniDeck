@@ -1,0 +1,17 @@
+plugins {
+    id("omnideck.android.library")
+    id("omnideck.module")
+}
+
+android {
+    namespace = "__MODULE_ID__"
+}
+
+// The SDK, the design system, Compose, KSP and the :platform:testing fakes all arrive
+// with `omnideck.module`. Add only what this module itself chooses — Room, a
+// serialiser, an extra test tool. It must never depend on :app, on :platform:kernel,
+// or on another module; `checkArchitecture` fails the build if it does.
+dependencies {
+}
+
+description = "__TITLE__ — an OmniDeck feature module owned by __OWNER__."

@@ -1,5 +1,6 @@
 package com.omnideck.kernel.lifecycle
 
+import com.omnideck.core.Clock
 import com.omnideck.core.DispatcherProvider
 import com.omnideck.kernel.loader.ModuleDescriptor
 import com.omnideck.kernel.loader.ModuleDescriptorSource
@@ -25,6 +26,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -40,7 +43,26 @@ data class ModuleRuntime(
     val manifest: ModuleManifest? = null,
     val reason: String? = null,
     val failureCount: Int = 0,
+    /** Wall-clock time of the oldest failure still inside the quarantine window. */
+    val firstFailureAtMs: Long = 0,
+    /** Download progress while [ModuleState.INSTALLING], when the provider reports it. */
+    val installProgress: Float? = null,
+    /**
+     * Why the module is quarantined. A kill switch is reversible from the server; a
+     * crash loop is not, and must not be cleared by the flag flipping back on
+     * (architecture.md §7.1 — "remote clear **and** version bump").
+     */
+    val quarantineCause: QuarantineCause? = null,
 )
+
+/** What put a module into [ModuleState.QUARANTINED]. */
+enum class QuarantineCause {
+    /** Server-pushed `module.<id>.enabled = false` (ADR-009). Reversible remotely. */
+    KILL_SWITCH,
+
+    /** Repeated initialisation failures inside the rolling window. Needs a new version. */
+    INIT_FAILURE,
+}
 
 /** Host identity, needed for the compatibility gate. */
 data class HostInfo(val sdkVersion: SemVer, val versionCode: Int)
@@ -72,6 +94,7 @@ class ModuleLifecycleManager @Inject constructor(
     private val events: EventBus,
     private val hostInfo: HostInfo,
     private val dispatchers: DispatcherProvider,
+    private val clock: Clock,
 ) {
 
     private val _modules = MutableStateFlow<Map<ModuleId, ModuleRuntime>>(emptyMap())
@@ -109,11 +132,18 @@ class ModuleLifecycleManager @Inject constructor(
 
         return provider.install(id).onEach { progress ->
             when (progress) {
-                is InstallProgress.Installed -> update(id) { it.copy(state = ModuleState.INSTALLED) }
-                is InstallProgress.Canceled -> update(id) { it.copy(state = ModuleState.ADVERTISED) }
-                is InstallProgress.Failed -> update(id) {
-                    it.copy(state = ModuleState.ADVERTISED, reason = progress.message)
+                is InstallProgress.Installed -> update(id) {
+                    it.copy(state = ModuleState.INSTALLED, installProgress = null)
                 }
+                is InstallProgress.Canceled -> update(id) {
+                    it.copy(state = ModuleState.ADVERTISED, installProgress = null)
+                }
+                is InstallProgress.Failed -> update(id) {
+                    it.copy(state = ModuleState.ADVERTISED, reason = progress.message, installProgress = null)
+                }
+                // Surfaced so the tile shows a real bar rather than an indeterminate
+                // spinner: a stalled 43% is diagnosable, a spinner is not.
+                is InstallProgress.Downloading -> update(id) { it.copy(installProgress = progress.fraction) }
                 else -> Unit
             }
         }
@@ -129,7 +159,7 @@ class ModuleLifecycleManager @Inject constructor(
 
         if (current.state.isUsable) return current
         if (current.state == ModuleState.QUARANTINED) return current
-        if (isKilled(id)) return quarantine(id, "Disabled by the OmniDeck team.")
+        if (isKilled(id)) return quarantine(id, "Disabled by the OmniDeck team.", QuarantineCause.KILL_SWITCH)
 
         val provider = providerFor(current.descriptor)
             ?: return update(id) { it.copy(state = ModuleState.FAILED, reason = "No provider") }
@@ -159,6 +189,7 @@ class ModuleLifecycleManager @Inject constructor(
                     is ModuleInitResult.Ready, is ModuleInitResult.Degraded -> {
                         module.registerDestinations(destinations.scopedTo(id))
                         module.registerCapabilities(capabilities.scopedTo(id))
+                        verifyDeclaredRoutes(destinations, telemetry, manifest)
                         val state = if (result is ModuleInitResult.Ready) {
                             ModuleState.ACTIVE
                         } else {
@@ -171,6 +202,8 @@ class ModuleLifecycleManager @Inject constructor(
                                 state = state,
                                 manifest = manifest,
                                 failureCount = 0,
+                                firstFailureAtMs = 0,
+                                quarantineCause = null,
                                 reason = (result as? ModuleInitResult.Degraded)?.reason,
                             )
                         }
@@ -201,6 +234,68 @@ class ModuleLifecycleManager @Inject constructor(
     }
 
     /**
+     * Brings a suspended module back (architecture.md §7.1, `Suspended -> Active`).
+     *
+     * The module instance is still in memory, so this re-enters `initialize` on the
+     * same object rather than reloading it — which is exactly why the contract
+     * requires `initialize` to be idempotent.
+     */
+    suspend fun resume(id: ModuleId): ModuleRuntime {
+        val current = _modules.value[id] ?: error("Unknown module $id")
+        if (current.state != ModuleState.SUSPENDED) return current
+        update(id) { it.copy(state = ModuleState.INSTALLED) }
+        return activate(id)
+    }
+
+    /**
+     * Applies the server-side kill switch continuously (ADR-009, QA-9: a live module
+     * must be contained within five minutes of the flag being pushed).
+     *
+     * Checking only at activation — which is all the state machine did before — meant
+     * a module already on screen kept running until the user next navigated to it,
+     * which is precisely the case the kill switch exists for. Collected for as long as
+     * the Shell process lives.
+     */
+    suspend fun watchKillSwitches() {
+        val ids = _modules.value.keys.toList()
+        if (ids.isEmpty()) return
+
+        combine(ids.map { id -> flags.booleanFlow(killSwitchKey(id), default = true).map { id to it } }) { it }
+            .collect { states -> states.forEach { (id, enabled) -> applyKillSwitch(id, enabled) } }
+    }
+
+    private suspend fun applyKillSwitch(id: ModuleId, enabled: Boolean) {
+        val runtime = _modules.value[id] ?: return
+        when {
+            !enabled && runtime.state != ModuleState.QUARANTINED ->
+                quarantine(id, "Disabled by the OmniDeck team.", QuarantineCause.KILL_SWITCH)
+
+            // Only a kill switch is reversible from the server. A module quarantined
+            // for crashing on start stays quarantined until a new version ships,
+            // because nothing about flipping a flag has fixed it.
+            enabled && runtime.quarantineCause == QuarantineCause.KILL_SWITCH -> release(id)
+
+            else -> Unit
+        }
+    }
+
+    /** Returns a kill-switched module to service once the flag is cleared. */
+    private fun release(id: ModuleId): ModuleRuntime {
+        telemetry.event("module_kill_switch_cleared", mapOf("module.id" to id.value))
+        val runtime = _modules.value.getValue(id)
+        val installed = providerFor(runtime.descriptor)?.isInstalled(id) == true
+        return update(id) {
+            it.copy(
+                state = if (installed) ModuleState.INSTALLED else ModuleState.ADVERTISED,
+                reason = null,
+                quarantineCause = null,
+                failureCount = 0,
+                firstFailureAtMs = 0,
+            )
+        }
+    }
+
+    /**
      * Erases module-owned data. Because storage is structurally isolated (ADR-005),
      * this is deterministic — which is what makes GDPR/DPDP erasure testable.
      */
@@ -225,14 +320,21 @@ class ModuleLifecycleManager @Inject constructor(
     }
 
     /** Forces a module out of service. Callable from a remote kill switch (< 5 min, QA-9). */
-    suspend fun quarantine(id: ModuleId, reason: String): ModuleRuntime {
-        telemetry.event("module_quarantined", mapOf("module.id" to id.value, "reason" to reason))
+    suspend fun quarantine(
+        id: ModuleId,
+        reason: String,
+        cause: QuarantineCause = QuarantineCause.KILL_SWITCH,
+    ): ModuleRuntime {
+        telemetry.event(
+            "module_quarantined",
+            mapOf("module.id" to id.value, "reason" to reason, "cause" to cause.name),
+        )
         instances[id]?.let { runCatching { it.suspend(SuspendReason.KILL_SWITCH) } }
         servicesFactory.cancelWork(id)
         destinations.removeAll(id)
         capabilities.removeAll(id)
         publishState(id, ModuleState.QUARANTINED)
-        return update(id) { it.copy(state = ModuleState.QUARANTINED, reason = reason) }
+        return update(id) { it.copy(state = ModuleState.QUARANTINED, reason = reason, quarantineCause = cause) }
     }
 
     fun stateOf(id: ModuleId): ModuleState = _modules.value[id]?.state ?: ModuleState.ADVERTISED
@@ -241,12 +343,26 @@ class ModuleLifecycleManager @Inject constructor(
 
     // -----------------------------------------------------------------------
 
+    /**
+     * Counts failures in a *rolling* window (architecture.md §7.1).
+     *
+     * A plain lifetime counter quarantines a module that failed once a month for three
+     * months, which is a flaky network rather than a broken module. Only failures
+     * close enough together to be the same fault are allowed to add up.
+     */
     private fun onInitFailure(
         id: ModuleId,
         manifest: ModuleManifest?,
         result: ModuleInitResult.Failed,
     ): ModuleRuntime {
-        val failures = (_modules.value[id]?.failureCount ?: 0) + 1
+        val now = clock.nowMillis()
+        val previous = _modules.value[id]
+        val windowOpen = previous != null &&
+            previous.firstFailureAtMs != 0L &&
+            now - previous.firstFailureAtMs <= QUARANTINE_WINDOW_MS
+
+        val failures = if (windowOpen) previous.failureCount + 1 else 1
+        val windowStart = if (windowOpen) previous.firstFailureAtMs else now
         val message = result.error.message ?: "Initialisation failed"
 
         return if (!result.retryable || failures >= QUARANTINE_THRESHOLD) {
@@ -257,11 +373,19 @@ class ModuleLifecycleManager @Inject constructor(
                     manifest = manifest,
                     reason = message,
                     failureCount = failures,
+                    firstFailureAtMs = windowStart,
+                    quarantineCause = QuarantineCause.INIT_FAILURE,
                 )
             }
         } else {
             update(id) {
-                it.copy(state = ModuleState.INSTALLED, manifest = manifest, reason = message, failureCount = failures)
+                it.copy(
+                    state = ModuleState.INSTALLED,
+                    manifest = manifest,
+                    reason = message,
+                    failureCount = failures,
+                    firstFailureAtMs = windowStart,
+                )
             }
         }
     }
@@ -278,7 +402,7 @@ class ModuleLifecycleManager @Inject constructor(
         return null
     }
 
-    private fun isKilled(id: ModuleId): Boolean = !flags.boolean("module.${id.value}.enabled", default = true)
+    private fun isKilled(id: ModuleId): Boolean = !flags.boolean(killSwitchKey(id), default = true)
 
     private fun providerFor(descriptor: ModuleDescriptor): ModuleProvider? =
         providers.firstOrNull { it.handles == descriptor.delivery }
@@ -295,7 +419,48 @@ class ModuleLifecycleManager @Inject constructor(
     }
 
     private companion object {
-        /** Three failures in a session and the module is contained (architecture.md §7.1). */
+        /** Three failures inside the window and the module is contained (architecture.md §7.1). */
         const val QUARANTINE_THRESHOLD = 3
+
+        /**
+         * How long failures keep adding up. An hour is long enough to catch a module
+         * that fails every time the user opens it, and short enough that a genuinely
+         * transient failure from this morning does not count against one tonight.
+         */
+        const val QUARANTINE_WINDOW_MS = 60L * 60L * 1000L
     }
+}
+
+/** ADR-009. The one convention the kill switch depends on, in one place. */
+private fun killSwitchKey(id: ModuleId) = "module.${id.value}.enabled"
+
+/**
+ * Checks that a module registered what its manifest promised.
+ *
+ * A declared deep link with no destination behind it is a dead notification tap and a
+ * dead App Link — invisible until a user reports it, because nothing in the module's
+ * own tests exercises the Shell's route table. Reported rather than fatal: taking a
+ * working module offline over a missing secondary route would be the worse outcome.
+ * OD-212 asserts on this signal.
+ */
+private fun verifyDeclaredRoutes(
+    destinations: MutableDestinationRegistry,
+    telemetry: TelemetryService,
+    manifest: ModuleManifest,
+) {
+    val registered = destinations.destinations.value.map { it.pattern }.toSet()
+    val missing = manifest.deepLinks.filterNot { it in registered }
+    val entryUnresolved = destinations.resolve(manifest.entryRoute) == null
+
+    if (missing.isEmpty() && !entryUnresolved) return
+
+    telemetry.event(
+        "module_contract_violation",
+        mapOf(
+            "module.id" to manifest.id.value,
+            "owner" to manifest.owner.value,
+            "entry_route_unresolved" to entryUnresolved,
+            "unregistered_deep_links" to missing.joinToString { it.pattern },
+        ),
+    )
 }

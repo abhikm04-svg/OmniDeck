@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -133,9 +134,22 @@ class FakeAuthService(
 
 class FakeFeatureFlagService : FeatureFlagService {
     private val values = ConcurrentHashMap<String, Any>()
+
+    /**
+     * Bumped on every write so [booleanFlow] re-emits.
+     *
+     * Without it the fake handed back a single-value flow, and nothing built on this
+     * harness could test a flag *changing* — which is the only interesting thing a
+     * flag does. The kill switch (ADR-009) is exactly that case.
+     */
+    private val revision = MutableStateFlow(0)
+
     val reads = mutableListOf<String>()
 
-    fun set(key: String, value: Any) = apply { values[key] = value }
+    fun set(key: String, value: Any) = apply {
+        values[key] = value
+        revision.value++
+    }
 
     override fun boolean(key: String, default: Boolean): Boolean {
         reads += key
@@ -162,7 +176,8 @@ class FakeFeatureFlagService : FeatureFlagService {
         return (values[key] as? String)?.let(decode) ?: default
     }
 
-    override fun booleanFlow(key: String, default: Boolean): Flow<Boolean> = flowOf(boolean(key, default))
+    override fun booleanFlow(key: String, default: Boolean): Flow<Boolean> =
+        revision.map { boolean(key, default) }.distinctUntilChanged()
 
     override suspend fun refresh(): Boolean = true
 }
@@ -357,12 +372,25 @@ class FakeWorkScheduler : WorkScheduler {
     val cancelled = mutableListOf<String>()
     var cancelAllCalled = false
 
+    /**
+     * Periodic schedules with the interval they asked for.
+     *
+     * Recorded separately because the interval is the part a module gets wrong —
+     * WorkManager silently floors anything below 15 minutes, so a module that asks
+     * for 5 believes it syncs three times as often as it does. Folding these into
+     * [enqueued] alone would make that untestable.
+     */
+    val periodic = mutableListOf<Pair<WorkScheduler.WorkSpec, Duration>>()
+
     override fun enqueue(spec: WorkScheduler.WorkSpec): String {
         enqueued += spec
         return "work-${ids.incrementAndGet()}"
     }
 
-    override fun enqueuePeriodic(spec: WorkScheduler.WorkSpec, interval: Duration): String = enqueue(spec)
+    override fun enqueuePeriodic(spec: WorkScheduler.WorkSpec, interval: Duration): String {
+        periodic += spec to interval
+        return enqueue(spec)
+    }
 
     override fun cancel(workId: String) {
         cancelled += workId
@@ -371,12 +399,14 @@ class FakeWorkScheduler : WorkScheduler {
     override fun cancelAll() {
         cancelAllCalled = true
         enqueued.clear()
+        periodic.clear()
     }
 
     override fun status(workId: String): Flow<WorkScheduler.WorkStatus> = flowOf(WorkScheduler.WorkStatus.SUCCEEDED)
 
     fun reset() {
         enqueued.clear()
+        periodic.clear()
         cancelled.clear()
         cancelAllCalled = false
     }

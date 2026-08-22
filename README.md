@@ -10,8 +10,11 @@ property is enforced mechanically, not by convention — see [Guardrails](#guard
 
 ## Status
 
-Early. The platform skeleton, SDK contract and kernel services exist; the first real feature
-module does not yet. The Shell currently renders an empty state.
+Walking skeleton. The Shell launches, discovers whatever is under `modules/`, and renders it:
+the first feature module (Notes) is offline-first, persists to its own namespaced database and
+queues its changes for a sync service that does not exist yet, which it says so rather than
+pretending otherwise. Settings and a Privacy Centre are in place; dynamic delivery and the
+Catalog are not.
 
 ## Building
 
@@ -29,6 +32,7 @@ Useful targets:
 | `./gradlew qualityCheck` | Detekt, Spotless and the architecture fitness function |
 | `./gradlew apiCheck` | Fails if the SDK's public ABI drifts from its checked-in dump |
 | `./gradlew checkArchitecture` | Layering rules only |
+| `./gradlew newModule -Pid=<id>` | Scaffolds a compliant feature module |
 
 ## Repository layout
 
@@ -41,7 +45,10 @@ platform/
   design-system/       tokens and shared components
   testing/             in-memory fakes so modules test with no Shell
 modules/               feature modules (auto-discovered)
+benchmark/             macrobenchmarks and Baseline Profile generation (device only)
 tools/lint-rules/      custom Lint checks
+tools/module-processor/ KSP: validates each entry point, generates the module registry
+tools/module-template/ source for `./gradlew newModule`
 build-logic/           Gradle convention plugins
 ```
 
@@ -61,6 +68,12 @@ within a sprint.
   attribution and PII redaction. Enforced by a custom Lint rule.
 - **No direct permission calls** — modules request through `PermissionBroker`, which centralises
   rationale, denial handling and audit events. Also Lint-enforced.
+- **A module's entry point is checked at compile time.** Wrong name, wrong visibility, a
+  constructor argument or a missing interface fails the module's own build instead of failing to
+  load on a device in release only.
+- **No Shell source may name a module.** A unit test scans `app/` and `platform/kernel/`
+  production sources for any module id and fails if it finds one, which is the "adding a module
+  changes no Shell file" property checked mechanically rather than by reading a diff.
 
 ## Contributing
 

@@ -2,10 +2,12 @@ package com.omnideck.kernel.services
 
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.omnideck.core.MutableClock
 import com.omnideck.sdk.ModuleId
 import com.omnideck.sdk.capability.ConsentPurpose
 import com.omnideck.sdk.capability.HttpConfig
 import com.omnideck.sdk.capability.LocaleService
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import okhttp3.Interceptor
 import okhttp3.Protocol
@@ -153,7 +155,7 @@ class PlatformServiceImplsTest {
     @Test
     fun `consent starts with essential granted and nothing else`() {
         // Anything beyond ESSENTIAL requires the user to say so first.
-        val consent = ConsentServiceImpl()
+        val consent = ConsentServiceImpl(MutableClock())
 
         assertThat(consent.isGranted(ConsentPurpose.ESSENTIAL)).isTrue()
         assertThat(consent.isGranted(ConsentPurpose.PRODUCT_ANALYTICS)).isFalse()
@@ -161,14 +163,50 @@ class PlatformServiceImplsTest {
     }
 
     @Test
-    fun `requesting a purpose does not grant it before the Privacy Centre exists`() = runTest {
-        // Phase 4 (OD-411) drives this from real UI. Until then it must refuse rather
-        // than quietly self-approve, which would be a consent violation.
-        val consent = ConsentServiceImpl()
+    fun `requesting a purpose does not grant it on its own`() = runTest {
+        // A module asking is not a user consenting. The modal request flow is Phase 4
+        // (OD-411); until then this must refuse rather than quietly self-approve.
+        val consent = ConsentServiceImpl(MutableClock())
 
         val granted = consent.request(ConsentPurpose.MARKETING)
 
         assertThat(granted).isFalse()
         assertThat(consent.isGranted(ConsentPurpose.MARKETING)).isFalse()
+    }
+
+    @Test
+    fun `the Privacy Centre can grant a purpose and withdraw it again`() = runTest {
+        // Withdrawal has to be exactly as easy as granting — that is the GDPR/DPDP
+        // requirement the symmetric setter exists to meet (OD-207).
+        val clock = MutableClock(startMillis = 1_000)
+        val consent = ConsentServiceImpl(clock)
+
+        consent.set(ConsentPurpose.PRODUCT_ANALYTICS, granted = true)
+        assertThat(consent.isGranted(ConsentPurpose.PRODUCT_ANALYTICS)).isTrue()
+
+        clock.advanceBy(500)
+        consent.set(ConsentPurpose.PRODUCT_ANALYTICS, granted = false)
+
+        assertThat(consent.isGranted(ConsentPurpose.PRODUCT_ANALYTICS)).isFalse()
+        assertThat(consent.state.first().lastUpdatedEpochMs).isEqualTo(1_500)
+    }
+
+    @Test
+    fun `essential consent cannot be switched off, because the choice would not be real`() {
+        val consent = ConsentServiceImpl(MutableClock())
+
+        consent.set(ConsentPurpose.ESSENTIAL, granted = false)
+
+        assertThat(consent.isGranted(ConsentPurpose.ESSENTIAL)).isTrue()
+    }
+
+    @Test
+    fun `grant is the symmetric setter, so both paths record the same decision`() {
+        val consent = ConsentServiceImpl(MutableClock(startMillis = 42))
+
+        consent.grant(ConsentPurpose.MARKETING, ConsentPurpose.PERSONALISATION)
+
+        assertThat(consent.isGranted(ConsentPurpose.MARKETING)).isTrue()
+        assertThat(consent.isGranted(ConsentPurpose.PERSONALISATION)).isTrue()
     }
 }

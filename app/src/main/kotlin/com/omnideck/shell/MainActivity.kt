@@ -10,9 +10,9 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.omnideck.designsystem.theme.OmniDeckTheme
 import com.omnideck.kernel.services.PermissionRequester
-import com.omnideck.sdk.Route
 import com.omnideck.sdk.capability.PermissionBroker
 import com.omnideck.sdk.capability.Router
+import com.omnideck.shell.navigation.ExternalRoutes
 import com.omnideck.shell.navigation.ShellNavHost
 import com.omnideck.shell.navigation.ShellNavigationSink
 import dagger.hilt.android.AndroidEntryPoint
@@ -81,11 +81,17 @@ class MainActivity : ComponentActivity() {
         handleDeepLink(intent)
     }
 
-    /** All external entry points converge on the Router — notifications, App Links, shortcuts. */
+    /**
+     * All external entry points converge on the Router — notifications, App Links,
+     * shortcuts, the `omnideck://` scheme (OD-204).
+     *
+     * [ExternalRoutes] returns null for anything OmniDeck does not own, and that null
+     * matters: an Intent's data is attacker-controllable, so a URI we cannot map is
+     * dropped rather than handed to the Router as though the user had asked for it.
+     */
     private fun handleDeepLink(intent: Intent?) {
-        val uri = intent?.data?.toString() ?: return
-        if (!uri.startsWith(Route.SCHEME_PREFIX)) return
-        lifecycleScope.launch { router.navigate(Route(uri)) }
+        val route = ExternalRoutes.from(intent?.data) ?: return
+        lifecycleScope.launch { router.navigate(route) }
     }
 
     override fun onDestroy() {

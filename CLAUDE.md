@@ -22,6 +22,7 @@ Requires **JDK 21** and Android SDK platform 36 (`compileSdk` 36, `minSdk` 26).
 
 ```bash
 ./gradlew :app:assembleDebug            # build the Shell
+./gradlew newModule -Pid=<shortId>      # scaffold a module (OD-211; -Powner, -Ptitle optional)
 ./gradlew build                         # compile + test + static analysis + lint
 ./gradlew qualityCheck                  # Detekt + Spotless + checkArchitecture (no test compile)
 ./gradlew apiCheck                      # SDK ABI vs the checked-in .api dumps
@@ -41,12 +42,25 @@ Single test — Android modules use the variant task; `:platform:omnideck-sdk-co
 ./gradlew :tools:lint-rules:test --tests "*RawLogDetectorTest"
 ```
 
-Instrumented tests need a device/emulator — `SecureStoreImpl` is only covered there, because the
-Android Keystore has no JVM or Robolectric implementation:
+Instrumented tests need a device/emulator. `SecureStoreImpl` is only covered there (the Android
+Keystore has no JVM or Robolectric implementation), and so is the device half of the
+plug-and-play fitness test — its unit-level half runs in `:app:testDebugUnitTest` on every build:
 
 ```bash
 ./gradlew :platform:kernel:connectedDebugAndroidTest
+./gradlew :app:connectedDebugAndroidTest              # OD-212, scaffold -> load -> render
 ```
+
+Performance work also needs a device, and is deliberately outside the ordinary build:
+
+```bash
+./gradlew :benchmark:connectedBenchmarkBenchmarkAndroidTest            # OD-213 budgets
+./gradlew -Pomnideck.baselineProfiles=true :app:generateBaselineProfile  # OD-214
+```
+
+The Baseline Profile *plugin* is opt-in because it hangs an adb run off `assemble`, which would
+make `./gradlew build` need a device. Shipping a profile does not need it: the recorded
+`app/src/main/baseline-prof.txt` is merged by AGP on every release build.
 
 On Windows, `clean` fails with "Unable to delete directory" while the daemon and Lint hold jars
 open — run `./gradlew --stop` first.
@@ -66,6 +80,14 @@ open — run `./gradlew --stop` first.
 - **Custom Lint rules** (`tools/lint-rules/`) — `OmniDeckRawLog` bans `android.util.Log`
   (logging goes through `TelemetryService` for module attribution and PII redaction);
   `OmniDeckRawPermission` bans direct permission calls (go through `PermissionBroker`).
+- **`:tools:module-processor`** (KSP, ADR-010) checks every `ModuleEntryPoint` at compile time —
+  public, concrete, no-arg constructor, implements `OmniModule` — and generates the factory the
+  Shell's `GeneratedModuleRegistry` aggregates. Each check replaces a failure that previously
+  appeared only at load time, on a device, in release builds.
+- **`ShellIsolationFitnessTest`** (in `:app`) fails if any production source under `app/src/main`
+  or `platform/kernel/src/main` names a module — the id, `omnideck://<shortId>`, or the short id
+  as a bare string. This is the Phase 2 exit gate ("OD-209 required no Shell change") enforced
+  mechanically rather than by reading a diff. Test fixtures are out of scope by design.
 - **Coverage floors** — 80% for `:platform:*`, 70% for `:modules:*` (`gradle.properties`). A
   project with no `src/test` or `src/androidTest` warns instead of failing, and inherits the
   floor the moment a test source set appears. Exclusions are narrow, live in the root
