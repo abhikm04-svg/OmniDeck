@@ -6,20 +6,32 @@ import com.omnideck.sdk.Route
 /**
  * Turns anything the OS hands the Shell into an OmniDeck [Route] (OD-204).
  *
- * There are three external entry points — the `omnideck://` scheme, an https App Link,
- * and an app shortcut — and all three converge here so that the Router remains the
- * single place that decides what a route means. A module never learns which door the
- * user came through, and no external URI reaches [Route] without passing the
- * normalisation here — lowercased scheme, no fragment, a host that is actually there.
+ * External entry points — the `omnideck://` scheme, an app shortcut, and an https App
+ * Link — all converge here so that the Router remains the single place that decides what
+ * a route means. A module never learns which door the user came through, and no external
+ * URI reaches [Route] without passing the normalisation here — lowercased scheme, no
+ * fragment, a host that is actually there.
  *
- * App Link *verification* is deliberately not on yet: `autoVerify` requires a published
- * `assetlinks.json` at [WEB_HOST], which is OD-321 — carried from OD-204 into Phase 3,
- * not a store-submission task. Until then the filter still works; Android just shows a
- * disambiguation chooser rather than opening OmniDeck directly.
+ * **The https door is currently shut at the manifest** (OD-716). OmniDeck owns no web
+ * origin, so there is no `<data android:scheme="https">` filter and the OS never routes a
+ * web URL here. [fromWeb] is kept, documented and tested rather than deleted: the mapping
+ * and the reserved prefix are decided (ADR-011), and restoring the door is a manifest
+ * change plus a published `assetlinks.json`, not a redesign.
+ *
+ * Nothing else depends on that. The custom scheme needs no domain and carries every
+ * internal link, notification tap and shortcut; what the missing origin costs is link
+ * *shareability* — an `omnideck://` URL is not clickable in an inbox — not function.
  */
 object ExternalRoutes {
 
-    /** The web origin that mirrors the app's URI space. */
+    /**
+     * The web origin that mirrors the app's URI space — **a placeholder, not a claim**.
+     *
+     * `omnideck.app` is registered to someone else. It stays here as the shape of the
+     * thing rather than a live host: nothing in the manifest points at it, so [fromWeb]
+     * is unreachable from the OS until OD-716 stands up an origin we control. Whoever
+     * does that replaces this constant and restores the filter in the same change.
+     */
     const val WEB_HOST = "omnideck.app"
 
     /**
@@ -27,14 +39,14 @@ object ExternalRoutes {
      * `https://omnideck.app/go/notes/note/42` (ADR-011, architecture.md §10.1).
      *
      * Everything outside it belongs to the website and has to keep opening in a
-     * browser — `omnideck.app/delete-account` above all, which Play requires to be
-     * reachable as a public web page (architecture.md §19.2). The manifest filter
-     * carries the same prefix, because once OD-321 flips `autoVerify` a filter on the
-     * bare host stops the browser being offered for those URLs at all.
+     * browser — the account-deletion page above all, which Play requires to be reachable
+     * without the app installed (architecture.md §19.2). When the filter is restored it
+     * must carry the same prefix, because a filter on the bare host stops the browser
+     * being offered for those URLs at all once `autoVerify` is on.
      *
      * Changing it is not a local edit: it breaks every link already shared under the
-     * old prefix, so it has to be settled before OD-321 publishes `assetlinks.json`.
-     * The two places that must agree are this constant and the manifest's
+     * old prefix, so it has to be settled before `assetlinks.json` is published
+     * (OD-321). The two places that must agree are this constant and the manifest's
      * `android:pathPrefix` — the manifest decides what the app is offered, this
      * decides what it does with it.
      */
