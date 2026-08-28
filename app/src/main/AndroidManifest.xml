@@ -61,7 +61,7 @@
               shared from the app are the same link.
 
               autoVerify stays false until assetlinks.json is published at the domain
-              (a store-readiness task, OD-701). Turning it on without the file makes
+              (a store-readiness task, OD-321). Turning it on without the file makes
               Android fail verification on every install and silently stop offering
               the app at all — worse than the disambiguation chooser we get now.
             -->

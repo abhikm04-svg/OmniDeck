@@ -13,7 +13,7 @@ import com.omnideck.sdk.Route
  *
  * App Link *verification* is deliberately not on yet: `autoVerify` requires a
  * published `assetlinks.json` at [WEB_HOST], which is a store-readiness task
- * (Phase 7, OD-701). Until then the filter still works — Android just shows a
+ * (OD-321). Until then the filter still works — Android just shows a
  * disambiguation chooser rather than opening OmniDeck directly.
  */
 object ExternalRoutes {
