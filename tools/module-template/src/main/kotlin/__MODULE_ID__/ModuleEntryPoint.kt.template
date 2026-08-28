@@ -1,0 +1,85 @@
+package __MODULE_ID__
+
+import __MODULE_ID__.ui.__CLASS__HomeScreen
+import com.omnideck.sdk.CapabilityId
+import com.omnideck.sdk.DataCategory
+import com.omnideck.sdk.DeliveryKind
+import com.omnideck.sdk.DestinationRegistry
+import com.omnideck.sdk.IconRef
+import com.omnideck.sdk.LocalizedString
+import com.omnideck.sdk.ModuleCategory
+import com.omnideck.sdk.ModuleId
+import com.omnideck.sdk.ModuleInitResult
+import com.omnideck.sdk.ModuleManifest
+import com.omnideck.sdk.OmniModule
+import com.omnideck.sdk.PlatformServices
+import com.omnideck.sdk.PurgeScope
+import com.omnideck.sdk.Route
+import com.omnideck.sdk.SemVer
+import com.omnideck.sdk.SemVerRange
+import com.omnideck.sdk.TeamRef
+
+/**
+ * __TITLE__ — the module's entire integration surface.
+ *
+ * The class name, the package and the no-argument constructor are all load-bearing:
+ * the Shell finds this class through the descriptor and the keep rule that
+ * `omnideck.module` generates, and `:tools:module-processor` fails the build at
+ * compile time if the shape is wrong. Nothing else needs registering anywhere.
+ */
+class ModuleEntryPoint : OmniModule {
+
+    // Not `lateinit`: initialize() may be retried after a failure, and a half-built
+    // component from the previous attempt must not be reachable in between.
+    @Volatile
+    private var services: PlatformServices? = null
+
+    override val manifest = ModuleManifest(
+        id = ModuleId("__MODULE_ID__"),
+        version = SemVer(0, 1, 0),
+        displayName = LocalizedString(default = "__TITLE__"),
+        summary = LocalizedString(default = "TODO(__SHORT_ID__): one line a user would recognise."),
+        category = ModuleCategory.PRODUCTIVITY,
+        icon = IconRef.Symbol("widgets"),
+        delivery = DeliveryKind.BUNDLED,
+        // The host SDK versions this module supports. Outside this range the Shell
+        // refuses to start it and tells the user to update, instead of failing with a
+        // NoSuchMethodError three screens into a journey.
+        sdkRange = SemVerRange.parse(">=1.0.0 <2.0.0"),
+        minHostVersionCode = 1,
+        entryRoute = Route("omnideck://__SHORT_ID__/home"),
+        // Declare only what the module cannot work without. Every call is checked
+        // against this at runtime, not just at load.
+        requiredCapabilities = setOf(CapabilityId.TELEMETRY),
+        optionalCapabilities = emptySet(),
+        // Required, not optional: the Play Data Safety declaration is generated from
+        // these, so an omission here becomes a false statement in the store listing.
+        dataCategories = setOf(DataCategory.APP_ACTIVITY),
+        owner = TeamRef("__OWNER__"),
+    )
+
+    /**
+     * Runs once, on a background dispatcher, before any destination renders. Must be
+     * idempotent, must not touch the UI, and must return within 500 ms
+     * (architecture.md §16) — build cheap things here and defer the rest.
+     */
+    override suspend fun initialize(services: PlatformServices): ModuleInitResult {
+        this.services = services
+        services.telemetry.event("__SHORT_ID___initialized")
+        return ModuleInitResult.Ready
+    }
+
+    override fun registerDestinations(registry: DestinationRegistry) {
+        registry.destination("omnideck://__SHORT_ID__/home") {
+            __CLASS__HomeScreen()
+        }
+    }
+
+    /**
+     * The module's half of the erasure guarantee (architecture.md §12.5). Called on
+     * module removal, sign-out and account deletion — it must be exhaustive.
+     */
+    override suspend fun purge(scope: PurgeScope) {
+        if (scope == PurgeScope.ALL) services = null
+    }
+}

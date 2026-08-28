@@ -6,6 +6,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import androidx.core.content.getSystemService
 import androidx.core.text.layoutDirection
+import com.omnideck.core.Clock
 import com.omnideck.sdk.ModuleId
 import com.omnideck.sdk.Sku
 import com.omnideck.sdk.capability.AuthException
@@ -171,9 +172,9 @@ class LocaleServiceImpl(private val context: Context) : LocaleService {
 }
 
 @Singleton
-class ConsentServiceImpl @Inject constructor() : ConsentService {
+class ConsentServiceImpl @Inject constructor(private val clock: Clock) : ConsentService {
 
-    // Phase 4 (OD-411) persists this and drives it from the Privacy Centre UI.
+    // Phase 4 (OD-411) persists this across launches and adds the modal request flow.
     // ESSENTIAL is always granted; nothing else is, until the user says so.
     private val current = MutableStateFlow(
         ConsentState(granted = setOf(ConsentPurpose.ESSENTIAL), lastUpdatedEpochMs = 0L),
@@ -185,11 +186,25 @@ class ConsentServiceImpl @Inject constructor() : ConsentService {
 
     override suspend fun request(purpose: ConsentPurpose): Boolean = isGranted(purpose)
 
-    fun grant(vararg purposes: ConsentPurpose) {
-        current.value = current.value.copy(
-            granted = current.value.granted + purposes,
-            lastUpdatedEpochMs = System.currentTimeMillis(),
-        )
+    fun grant(vararg purposes: ConsentPurpose) = purposes.forEach { set(it, granted = true) }
+
+    /**
+     * The Privacy Centre's write path (OD-207).
+     *
+     * Withdrawal has to be exactly as easy as granting — that is the GDPR/DPDP
+     * requirement, and it is why this is a symmetric setter rather than a `grant`
+     * with a separate, harder revoke. [ConsentPurpose.ESSENTIAL] is the one exception:
+     * it covers what the app cannot run without, so offering to switch it off would
+     * be offering a choice that is not real.
+     */
+    fun set(purpose: ConsentPurpose, granted: Boolean) {
+        if (purpose == ConsentPurpose.ESSENTIAL && !granted) return
+        val updated = if (granted) {
+            current.value.granted + purpose
+        } else {
+            current.value.granted - purpose
+        }
+        current.value = ConsentState(granted = updated, lastUpdatedEpochMs = clock.nowMillis())
     }
 }
 

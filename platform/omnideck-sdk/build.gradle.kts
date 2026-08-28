@@ -22,6 +22,12 @@ description =
 dependencies {
     api(projects.platform.omnideckSdkCore)
 
+    // SyncEngine (OD-210) takes a Clock rather than reading the wall clock: backoff,
+    // TTLs and conflict timestamps are exactly the boundaries a static clock makes
+    // untestable. `api` because the type appears in SyncEngine's constructor, so a
+    // module must be able to name it.
+    api(projects.platform.core)
+
     api(libs.androidx.core.ktx)
     api(libs.androidx.datastore.preferences)
     api(libs.androidx.room.runtime)

@@ -4,6 +4,24 @@ plugins {
     id("omnideck.hilt")
 }
 
+// ---------------------------------------------------------------------------
+// OD-214 — Baseline Profile.
+//
+// Shipping one needs nothing here: AGP merges `src/main/baseline-prof.txt` into the
+// release build on its own, because androidx.profileinstaller is a dependency below.
+// That is what a user who installs from Play gets, and it works on a build machine
+// with no device attached.
+//
+// *Recording* one needs a device, so the plugin that drives it is opt-in — see the
+// note in benchmark/build.gradle.kts for why leaving it on breaks `./gradlew build`:
+//
+//   ./gradlew -Pomnideck.baselineProfiles=true :app:generateBaselineProfile
+// ---------------------------------------------------------------------------
+if (providers.gradleProperty("omnideck.baselineProfiles").map(String::toBoolean).getOrElse(false)) {
+    apply(plugin = "androidx.baselineprofile")
+    dependencies.add("baselineProfile", project(":benchmark"))
+}
+
 android {
     namespace = "com.omnideck.shell"
 
@@ -32,7 +50,21 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.startup)
 
+    // The plug-and-play fitness test at unit level (OD-212): Robolectric gives it the
+    // real merged assets, so it exercises the same discovery path the Shell uses on a
+    // device rather than a hand-built fixture of it.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    // The same capability fakes a module author gets. The Shell is a consumer of the
+    // platform too, and testing it against hand-rolled doubles would let the two
+    // drift apart.
+    testImplementation(projects.platform.testing)
+
+    androidTestImplementation(libs.truth)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.hilt.testing)
+    kspAndroidTest(libs.hilt.compiler)
 }

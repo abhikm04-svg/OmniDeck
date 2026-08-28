@@ -46,14 +46,29 @@ class RouterImpl @Inject constructor(
     private val sink: NavigationCommandSink,
 ) : Router {
 
-    private val results = MutableSharedFlow<Pair<CorrelationId, Any>>(extraBufferCapacity = 32)
+    private val results = MutableSharedFlow<Pair<CorrelationId, ResultSignal>>(extraBufferCapacity = 32)
     private val pending = ConcurrentHashMap<CorrelationId, Route>()
+
+    /** A produced result, or the absence of one. Distinguishing them is all of OD-205. */
+    private sealed interface ResultSignal {
+        data class Produced(val value: Any) : ResultSignal
+        data object Abandoned : ResultSignal
+    }
 
     override suspend fun navigate(route: Route): NavResult {
         telemetry.breadcrumb("navigate", mapOf("route" to route.uri))
 
         val owner = ownerOf(route) ?: return NavResult.Unhandled(route).also {
             telemetry.event("nav_unhandled", mapOf("route" to route.uri))
+        }
+
+        // Shell-owned destinations — Home, Settings, the Privacy Centre — are in the
+        // same route table as modules but have no lifecycle: nothing to install, gate
+        // or quarantine. Without this they would fall through to the acquisition flow
+        // and fail on a module id the lifecycle manager has never heard of.
+        if (owner !in lifecycle.modules.value) {
+            sink.navigate(route)
+            return NavResult.Navigated(route)
         }
 
         return when (lifecycle.stateOf(owner)) {
@@ -107,7 +122,14 @@ class RouterImpl @Inject constructor(
             val awaiting = launch {
                 results.filter { (id, _) -> id == correlationId }
                     .take(1)
-                    .collect { (_, value) -> send(asResultValue(value, type)) }
+                    .collect { (_, signal) ->
+                        send(
+                            when (signal) {
+                                is ResultSignal.Produced -> asResultValue(signal.value, type)
+                                ResultSignal.Abandoned -> NavResultValue.Cancelled
+                            },
+                        )
+                    }
             }
 
             try {
@@ -149,7 +171,24 @@ class RouterImpl @Inject constructor(
 
     override fun <T : Any> setResult(correlationId: CorrelationId, value: T) {
         pending.remove(correlationId)
-        results.tryEmit(correlationId to value)
+        results.tryEmit(correlationId to ResultSignal.Produced(value))
+    }
+
+    /**
+     * The user left without producing a result (OD-205).
+     *
+     * Called by the Shell when a destination carrying a correlation id is popped.
+     * Without it a caller of `navigateForResult` waits for ever on a screen the user
+     * dismissed — the flow never completes, and whatever it was gating never runs.
+     * Kernel-facing rather than part of the SDK's `Router`: abandonment is something
+     * the Shell observes about its own back stack, not something a module reports.
+     */
+    fun abandon(correlationId: CorrelationId) {
+        // Only for ids we actually handed out; a stale one from a restored back stack
+        // has no collector left and must not resurrect a completed flow.
+        if (pending.remove(correlationId) == null) return
+        telemetry.event("nav_result_abandoned")
+        results.tryEmit(correlationId to ResultSignal.Abandoned)
     }
 
     /** The acquisition flow: entitlement + download + init, then continue to the route. */

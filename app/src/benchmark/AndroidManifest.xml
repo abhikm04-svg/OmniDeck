@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Benchmark-variant manifest (OD-213).
+
+  `profileable` lets Macrobenchmark and the Baseline Profile generator read this
+  process's traces without the build being debuggable — which is the whole point:
+  a debuggable build is measurably slower and would give numbers no user experiences.
+  It applies only to this build type, never to release.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application tools:node="merge">
+        <profileable
+            android:shell="true"
+            tools:targetApi="29" />
+    </application>
+</manifest>

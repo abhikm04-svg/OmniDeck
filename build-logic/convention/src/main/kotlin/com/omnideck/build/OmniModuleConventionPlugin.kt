@@ -27,6 +27,10 @@ class OmniModuleConventionPlugin : Plugin<Project> {
 
     override fun apply(target: Project) = with(target) {
         pluginManager.apply("omnideck.compose")
+        // Applied here rather than in each module's build file so that every module
+        // gets the entry-point validation of OD-202 whether or not it happens to use
+        // another code generator of its own.
+        pluginManager.apply("com.google.devtools.ksp")
 
         dependencies.apply {
             add("implementation", project(":platform:omnideck-sdk"))
@@ -35,6 +39,10 @@ class OmniModuleConventionPlugin : Plugin<Project> {
             // A module must build and test with NO Shell and NO kernel.
             add("testImplementation", project(":platform:testing"))
             add("androidTestImplementation", project(":platform:testing"))
+
+            // Checks ModuleEntryPoint's shape at compile time and emits the factory
+            // the Shell's registry aggregates (architecture.md §7.2).
+            add("ksp", project(":tools:module-processor"))
         }
 
         val generatedRoot = layout.buildDirectory.dir("generated/omnideck")

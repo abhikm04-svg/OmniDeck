@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.omnideck.designsystem.component.EmptySurface
 import com.omnideck.designsystem.component.ErrorSurface
-import com.omnideck.designsystem.component.LoadingSurface
 import com.omnideck.designsystem.component.OmniTextField
 import com.omnideck.designsystem.component.PrimaryButton
 import com.omnideck.designsystem.component.SecondaryButton
@@ -59,18 +58,6 @@ class ComponentScreenshotTest {
     }
 
     @Test
-    fun buttonStatesShowDisabledAndBusy() {
-        // A busy button must look unavailable, not merely decorated with a spinner.
-        capture("buttons-states", ThemeVariant.Light) {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                PrimaryButton(text = "Install", onClick = {}, enabled = false)
-                PrimaryButton(text = "Installing", onClick = {}, loading = true)
-                SecondaryButton(text = "Working", onClick = {}, loading = true)
-            }
-        }
-    }
-
-    @Test
     fun textFieldShowsItsErrorAsTextNotJustColour() {
         // The WCAG point made visible: the failure is legible without relying on the
         // red outline being perceivable.
@@ -96,10 +83,11 @@ class ComponentScreenshotTest {
 
     @Test
     fun stateSurfacesAcrossThemes() {
-        // Loading, empty and error are required by the Definition of Done for every
-        // story, so they are shipped here rather than rebuilt per module.
+        // Empty and error are required by the Definition of Done for every story, so
+        // they are shipped here rather than rebuilt per module. Loading lives in
+        // AnimatedScreenshotTest — its spinner is an infinite animation and cannot be
+        // captured on this path at all.
         ThemeVariant.entries.forEach { variant ->
-            capture("surface-loading", variant) { LoadingSurface(label = "Starting OmniDeck…") }
             capture("surface-empty", variant) {
                 EmptySurface(
                     title = "No modules yet",

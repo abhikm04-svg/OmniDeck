@@ -1,0 +1,36 @@
+package __MODULE_ID__.ui
+
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.omnideck.designsystem.component.EmptySurface
+
+/**
+ * __TITLE__'s first screen.
+ *
+ * Built from the design system rather than raw Material so this module inherits the
+ * platform's theme, touch targets and accessibility behaviour, and stays visually
+ * consistent with every other module (goal G4).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun __CLASS__HomeScreen(modifier: Modifier = Modifier) {
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = { TopAppBar(title = { Text("__TITLE__") }) },
+    ) { padding ->
+        EmptySurface(
+            title = "__TITLE__ is running",
+            message = "This screen came from modules/__SHORT_ID__, loaded through the SDK " +
+                "contract. Nothing in the Shell knows it exists. Replace it with the real thing.",
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+        )
+    }
+}

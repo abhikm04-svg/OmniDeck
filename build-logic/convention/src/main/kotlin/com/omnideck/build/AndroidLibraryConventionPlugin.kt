@@ -17,7 +17,12 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
 
         extensions.configure<LibraryExtension> {
             configureAndroidCommon(this)
-            defaultConfig.consumerProguardFiles("consumer-rules.pro")
+            // Declared only when present. Naming a file that does not exist makes R8
+            // print "Supplied consumer proguard configuration does not exist" for every
+            // library on every release build — six lines of noise that train people to
+            // ignore R8's output, which is where the real keep-rule problems appear.
+            file("consumer-rules.pro").takeIf(java.io.File::exists)
+                ?.let { defaultConfig.consumerProguardFiles(it) }
             defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
             // Libraries never ship a debug variant to consumers.

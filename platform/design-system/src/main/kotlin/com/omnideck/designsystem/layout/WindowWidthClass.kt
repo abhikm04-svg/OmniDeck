@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.omnideck.designsystem.theme.Spacing
@@ -76,6 +79,24 @@ fun contentPadding(widthClass: WindowWidthClass): Dp = when (widthClass) {
  * rather than to keep stretching. Roughly 70 characters at body size.
  */
 val ReadableContentWidth: Dp = 640.dp
+
+/**
+ * The current window's size class.
+ *
+ * Reads the *window* rather than the device configuration. `Configuration.screenWidthDp`
+ * describes the display, not the surface the app is drawn into, so it is wrong in
+ * exactly the cases this abstraction exists for: split screen, a freeform window, and
+ * the small half of a folding device. Android Lint flags the configuration form for
+ * that reason, and centralising the correct one here means no screen has to remember.
+ */
+@Composable
+fun rememberWindowWidthClass(): WindowWidthClass {
+    val density = LocalDensity.current
+    val widthPx = LocalWindowInfo.current.containerSize.width
+    return remember(widthPx, density) {
+        WindowWidthClass.fromWidth(with(density) { widthPx.toDp() }.value.toInt())
+    }
+}
 
 /** Grid cells for a module tile list at the given width. */
 fun moduleGridCells(widthClass: WindowWidthClass): GridCells = GridCells.Fixed(moduleGridColumns(widthClass))

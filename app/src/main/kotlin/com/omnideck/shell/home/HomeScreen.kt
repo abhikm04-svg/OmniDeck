@@ -3,20 +3,26 @@ package com.omnideck.shell.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.omnideck.designsystem.component.EmptySurface
 import com.omnideck.designsystem.component.ModuleTile
+import com.omnideck.designsystem.layout.contentPadding
+import com.omnideck.designsystem.layout.moduleGridCells
+import com.omnideck.designsystem.layout.rememberWindowWidthClass
 import com.omnideck.designsystem.theme.Spacing
 import com.omnideck.sdk.ModuleId
+import com.omnideck.shell.ModuleTileModel
 
 /**
  * The launcher grid.
@@ -27,10 +33,29 @@ import com.omnideck.sdk.ModuleId
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(modules: List<ModuleTileModel>, onModuleClick: (ModuleId) -> Unit, modifier: Modifier = Modifier) {
+fun HomeScreen(
+    modules: List<ModuleTileModel>,
+    onModuleClick: (ModuleId) -> Unit,
+    onSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // Taken from the design system rather than chosen here, so the Shell and every
+    // module agree on what "medium" means. Play grades large-screen quality on
+    // exactly this, and a phone layout stretched across a tablet is how apps lose it.
+    val widthClass = rememberWindowWidthClass()
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { LargeTopAppBar(title = { Text("OmniDeck") }) },
+        topBar = {
+            LargeTopAppBar(
+                title = { Text("OmniDeck") },
+                actions = {
+                    IconButton(onClick = onSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                },
+            )
+        },
     ) { padding ->
         if (modules.isEmpty()) {
             EmptySurface(
@@ -43,12 +68,10 @@ fun HomeScreen(modules: List<ModuleTileModel>, onModuleClick: (ModuleId) -> Unit
         }
 
         LazyVerticalGrid(
-            // Adaptive rather than a fixed count: one grid works on phone, tablet and
-            // unfolded foldable, which is a Play large-screen quality requirement.
-            columns = GridCells.Adaptive(minSize = 220.dp),
+            columns = moduleGridCells(widthClass),
             contentPadding = PaddingValues(
-                start = Spacing.md,
-                end = Spacing.md,
+                start = contentPadding(widthClass),
+                end = contentPadding(widthClass),
                 top = padding.calculateTopPadding() + Spacing.sm,
                 bottom = padding.calculateBottomPadding() + Spacing.md,
             ),

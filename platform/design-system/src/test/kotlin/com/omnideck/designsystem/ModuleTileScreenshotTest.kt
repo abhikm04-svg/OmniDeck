@@ -16,7 +16,9 @@ import org.robolectric.annotation.GraphicsMode
  *
  * Captured through Roborazzi's composable overload rather than a ComposeTestRule,
  * because a rule allows only one `setContent` per test and the matrix needs many
- * captures per case.
+ * captures per case. The Installing state is the exception and lives in
+ * AnimatedScreenshotTest: its spinner is an infinite animation, which this path
+ * cannot capture without hanging.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -47,13 +49,6 @@ class ModuleTileScreenshotTest {
         // must survive truncation at the narrowest width.
         ThemeVariant.entries.forEach { variant ->
             capture("tile-available", variant, WindowSize.Compact, TileState.Available(downloadMb = 4.2))
-        }
-    }
-
-    @Test
-    fun installingTileShowsProgress() {
-        ThemeVariant.entries.forEach { variant ->
-            capture("tile-installing", variant, WindowSize.Compact, TileState.Installing(fraction = 0.45f))
         }
     }
 

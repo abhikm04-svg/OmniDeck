@@ -78,7 +78,12 @@ include(":platform:testing")
 // ---------------------------------------------------------------------------
 // Developer tooling
 // ---------------------------------------------------------------------------
+// Performance measurement (OD-213/214). Runs only against a device, never in the
+// ordinary build.
+include(":benchmark")
+
 include(":tools:lint-rules")
+include(":tools:module-processor")
 
 // ---------------------------------------------------------------------------
 // Module auto-discovery  (architecture.md G1 — "add a module without touching

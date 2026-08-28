@@ -2,11 +2,14 @@ package com.omnideck.kernel.di
 
 import android.content.Context
 import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
+import com.omnideck.core.Clock
 import com.omnideck.core.DefaultDispatcherProvider
 import com.omnideck.core.DispatcherProvider
+import com.omnideck.core.SystemClock
 import com.omnideck.kernel.events.EventBusImpl
 import com.omnideck.kernel.lifecycle.HostInfo
 import com.omnideck.kernel.loader.AssetModuleDescriptorSource
+import com.omnideck.kernel.loader.BundledModuleFactories
 import com.omnideck.kernel.loader.BundledModuleProvider
 import com.omnideck.kernel.loader.FeatureSplitProvider
 import com.omnideck.kernel.loader.ModuleDescriptorSource
@@ -80,6 +83,16 @@ object KernelModule {
     fun dispatchers(): DispatcherProvider = DefaultDispatcherProvider
 
     /**
+     * Injected rather than read statically, for the same reason detekt bans
+     * `System.currentTimeMillis`: the quarantine window is a time boundary, and a
+     * time boundary that cannot be moved in a test is a time boundary that is never
+     * tested.
+     */
+    @Provides
+    @Singleton
+    fun clock(): Clock = SystemClock
+
+    /**
      * Platform-scoped telemetry (moduleId = null). Module-scoped views come from
      * `ModuleScopedServicesFactory`, never from here.
      */
@@ -105,17 +118,22 @@ object KernelModule {
     @Provides
     @ElementsIntoSet
     @Singleton
-    fun moduleProviders(@ApplicationContext context: Context, dispatchers: DispatcherProvider): Set<ModuleProvider> =
-        setOf(
-            BundledModuleProvider(dispatchers.io),
-            FeatureSplitProvider(
-                installer = PlaySplitInstaller(SplitInstallManagerFactory.create(context)),
-                io = dispatchers.io,
-                // Re-read per load, not captured: SplitCompat swaps the class loader
-                // in after an install, and a captured one cannot see the new code.
-                classLoader = { context.classLoader },
-            ),
-        )
+    fun moduleProviders(
+        @ApplicationContext context: Context,
+        dispatchers: DispatcherProvider,
+        bundledFactories: BundledModuleFactories,
+    ): Set<ModuleProvider> = setOf(
+        // OD-202: the generated constructors come from the Shell, so a bundled
+        // module starts with no class-name lookup on the startup path.
+        BundledModuleProvider(dispatchers.io, bundledFactories),
+        FeatureSplitProvider(
+            installer = PlaySplitInstaller(SplitInstallManagerFactory.create(context)),
+            io = dispatchers.io,
+            // Re-read per load, not captured: SplitCompat swaps the class loader
+            // in after an install, and a captured one cannot see the new code.
+            classLoader = { context.classLoader },
+        ),
+    )
 
     /**
      * The host SDK version. Bumped deliberately, reviewed under ADR-004, and compared

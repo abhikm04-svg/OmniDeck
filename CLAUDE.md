@@ -22,6 +22,7 @@ Requires **JDK 21** and Android SDK platform 36 (`compileSdk` 36, `minSdk` 26).
 
 ```bash
 ./gradlew :app:assembleDebug            # build the Shell
+./gradlew newModule -Pid=<shortId>      # scaffold a module (OD-211; -Powner, -Ptitle optional)
 ./gradlew build                         # compile + test + static analysis + lint
 ./gradlew qualityCheck                  # Detekt + Spotless + checkArchitecture (no test compile)
 ./gradlew apiCheck                      # SDK ABI vs the checked-in .api dumps
@@ -41,12 +42,74 @@ Single test — Android modules use the variant task; `:platform:omnideck-sdk-co
 ./gradlew :tools:lint-rules:test --tests "*RawLogDetectorTest"
 ```
 
-Instrumented tests need a device/emulator — `SecureStoreImpl` is only covered there, because the
-Android Keystore has no JVM or Robolectric implementation:
+Instrumented tests need a device/emulator. `SecureStoreImpl` is only covered there (the Android
+Keystore has no JVM or Robolectric implementation), and so is the device half of the
+plug-and-play fitness test — its unit-level half runs in `:app:testDebugUnitTest` on every build:
 
 ```bash
 ./gradlew :platform:kernel:connectedDebugAndroidTest
+./gradlew :app:connectedDebugAndroidTest              # OD-212, scaffold -> load -> render
 ```
+
+Performance work also needs a device, and is deliberately outside the ordinary build:
+
+```bash
+./gradlew :benchmark:connectedBenchmarkAndroidTest            # OD-213 budgets
+./gradlew -Pomnideck.baselineProfiles=true :app:generateBaselineProfile  # OD-214
+```
+
+The Baseline Profile *plugin* is opt-in because it hangs an adb run off `assemble`, which would
+make `./gradlew build` need a device. Shipping a profile does not need it: the recorded
+`app/src/main/baseline-prof.txt` is merged by AGP on every release build, which is why it lives
+in `src/main` rather than in the plugin's `src/release/generated/` output directory — that path
+is only a source set while the opt-in plugin is applied, and a profile silently dropped from the
+release is the exact failure this arrangement exists to prevent. Verify a change with
+`./gradlew :app:assembleRelease` and check that
+`app/build/intermediates/merged_art_profile/release/**/baseline-prof.txt` still contains the
+`com/omnideck` rules — currently 962 of them, 167 from inside the module, which is the evidence
+that module activation is on the profiled path and not just the Shell's own startup.
+
+**Startup profiles do not work this way**, and a committed `startup-prof.txt` is dead weight: with
+the plugin off, `mergeReleaseStartupProfile` runs, reads no source set and writes nothing. Only
+the plugin registers a startup profile, and only into its own generated directory. Recording one
+still costs nothing — `BaselineProfileGenerator` passes `includeInStartupProfile = true` so the
+artifact exists the day the profile workflow moves to the plugin's generated-sources model
+(OD-607) — but note before relying on it that a single-interaction recording emits a startup
+profile byte-identical to the baseline profile. A startup profile is meant to be the *subset*
+reached during startup, and one that is the whole thing tells AGP's dex layout nothing.
+
+**On OEM builds that block broadcasts to stopped packages** — observed on Xiaomi/HyperOS, where
+`am broadcast` to a force-stopped package returns `result=0` even with
+`--include-stopped-packages` — macrobenchmark cannot reach `androidx.profileinstaller`. Two
+consequences, neither a defect in this repo:
+
+```bash
+# skip the shader-cache drop, which is otherwise attempted on every compilation mode
+./gradlew :benchmark:connectedBenchmarkAndroidTest \
+    -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.dropShaders.enable=false
+```
+
+and `StartupBenchmark.startupWithBaselineProfile` cannot run there at all — it uses
+`BaselineProfileMode.Require`, which exists precisely so the test cannot silently measure an
+uncompiled app. Do not weaken it to `Require`'s softer siblings to make one phone go green. The
+same OEM throttles repeated ADB installs, so an occasional `INSTALL_FAILED_USER_RESTRICTED` on a
+connected-test run is the phone, not the build.
+
+An emulator does run it, and is how to confirm that the committed profile is actually in the APK
+and installable by ART — but macrobenchmark refuses an emulator until told not to:
+
+```bash
+./gradlew :benchmark:connectedBenchmarkAndroidTest \
+    -Pandroid.testInstrumentationRunnerArguments.class=com.omnideck.benchmark.StartupBenchmark \
+    -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
+```
+
+Read the pass/fail there, not the milliseconds. `suppressErrors` silences the reason the number
+is unusable rather than removing it: the emulator reports `cpuLocked: false`, and on the same
+build where a physical device measured a 486 ms uncompiled p90 it has measured 1292-1431 ms.
+Taken as a budget that would fail Phase 2 for the host machine's scheduler. The first run after
+boot is worse still — a cold emulator ramps 2826 -> 902 ms across ten iterations, so a p90 from
+it can rank a profiled build *below* an unprofiled one.
 
 On Windows, `clean` fails with "Unable to delete directory" while the daemon and Lint hold jars
 open — run `./gradlew --stop` first.
@@ -66,6 +129,14 @@ open — run `./gradlew --stop` first.
 - **Custom Lint rules** (`tools/lint-rules/`) — `OmniDeckRawLog` bans `android.util.Log`
   (logging goes through `TelemetryService` for module attribution and PII redaction);
   `OmniDeckRawPermission` bans direct permission calls (go through `PermissionBroker`).
+- **`:tools:module-processor`** (KSP, ADR-010) checks every `ModuleEntryPoint` at compile time —
+  public, concrete, no-arg constructor, implements `OmniModule` — and generates the factory the
+  Shell's `GeneratedModuleRegistry` aggregates. Each check replaces a failure that previously
+  appeared only at load time, on a device, in release builds.
+- **`ShellIsolationFitnessTest`** (in `:app`) fails if any production source under `app/src/main`
+  or `platform/kernel/src/main` names a module — the id, `omnideck://<shortId>`, or the short id
+  as a bare string. This is the Phase 2 exit gate ("OD-209 required no Shell change") enforced
+  mechanically rather than by reading a diff. Test fixtures are out of scope by design.
 - **Coverage floors** — 80% for `:platform:*`, 70% for `:modules:*` (`gradle.properties`). A
   project with no `src/test` or `src/androidTest` warns instead of failing, and inherits the
   floor the moment a test source set appears. Exclusions are narrow, live in the root
@@ -152,7 +223,8 @@ identity. Treat anything here as security-critical (`architecture.md` §12.2).
 Build files stay thin because `build-logic/` (a composite build) supplies the conventions:
 `omnideck.android.application` (Shell + module auto-wiring), `omnideck.android.library`,
 `omnideck.android.feature`, `omnideck.module` (feature modules), `omnideck.compose`,
-`omnideck.hilt`, `omnideck.jvm.library`, `omnideck.quality`. Shared Android/Kotlin/test config
+`omnideck.hilt`, `omnideck.jvm.library`, `omnideck.quality`, `omnideck.tooling` (the root-only
+`newModule` scaffolder, OD-211). Shared Android/Kotlin/test config
 lives in `Extensions.kt`. Convention plugins take AGP/Kotlin/KSP as `compileOnly`; versions come
 from the consuming build's root `plugins { ... apply false }` block and `libs.versions.toml`.
 

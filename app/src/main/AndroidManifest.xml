@@ -54,6 +54,23 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="omnideck" />
             </intent-filter>
+
+            <!--
+              App Links (OD-204). The web path maps one-to-one onto the app's URI
+              space (see ExternalRoutes), so a link shared from a browser and a link
+              shared from the app are the same link.
+
+              autoVerify stays false until assetlinks.json is published at the domain
+              (a store-readiness task, OD-701). Turning it on without the file makes
+              Android fail verification on every install and silently stop offering
+              the app at all — worse than the disambiguation chooser we get now.
+            -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="omnideck.app" />
+            </intent-filter>
         </activity>
 
         <!-- WorkManager is initialised on demand by the kernel, not at process start. -->

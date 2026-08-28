@@ -193,14 +193,13 @@ class SdkDefaultsTest {
     }
 
     @Test
-    fun `the argument-free destination overload delegates to the main one`() {
+    fun `a destination whose content ignores its arguments needs no parameter list`() {
         val registry = RecordingRegistry()
-        // Typed explicitly: an empty lambda is ambiguous between the two overloads,
-        // since `{ }` satisfies both `() -> Unit` and `(RouteArgs) -> Unit`. Module
-        // authors hit the same thing and disambiguate the same way.
-        val content: @Composable () -> Unit = { }
 
-        registry.destination("omnideck://notes/home", content)
+        // The shape every module actually writes. It used to be ambiguous against an
+        // argument-free overload, which is why that overload no longer exists
+        // (OD-209 found it on the first destination ever registered).
+        registry.destination("omnideck://notes/home") { }
 
         assertThat(registry.patterns).containsExactly("omnideck://notes/home")
     }
