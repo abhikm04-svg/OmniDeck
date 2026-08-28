@@ -160,7 +160,7 @@ class QualityConventionPlugin : Plugin<Project> {
             // Read here, not inside the configure lambda below: the value must be a
             // plain Boolean by the time the task is realised, never a live project
             // lookup the configuration cache would have to carry.
-            val dynamicFeature = pluginManager.hasPlugin("com.android.dynamic-feature")
+            val isDynamicFeature = pluginManager.hasPlugin("com.android.dynamic-feature")
             val declared = configurations.filter { it.name in DEPENDENCY_CONFIGURATIONS }
 
             val projectDeps = declared
@@ -186,7 +186,7 @@ class QualityConventionPlugin : Plugin<Project> {
             checkArchitecture.configure {
                 dependencyPaths.set(projectDeps)
                 externalDependencies.set(externalDeps)
-                isDynamicFeature.set(dynamicFeature)
+                dynamicFeature.set(isDynamicFeature)
             }
         }
 
@@ -219,9 +219,11 @@ abstract class CheckArchitectureTask : DefaultTask() {
      * True for a module on the on-demand path (OD-301).
      *
      * Play Feature Delivery inverts the dependency: a split is compiled against the
-     * base APK, so AGP wires an edge from the module to `:app` that no one declared
-     * and no one can remove. That edge is the mechanism, not a design decision, so it
-     * is exempted here rather than left to fail a rule it cannot obey.
+     * base APK and takes its application id from it, so `omnideck.android.feature`
+     * must declare an edge from the module to `:app`. AGP gives no way to avoid it —
+     * the build fails resolving the base metadata without it. That edge is the
+     * mechanism, not a design decision, so it is exempted here rather than left to
+     * fail a rule it cannot obey.
      *
      * Be clear about what this costs: a split *can* see the kernel transitively
      * through the Shell, which the layering rule otherwise forbids. Nothing in the
@@ -230,8 +232,12 @@ abstract class CheckArchitectureTask : DefaultTask() {
      * testing standalone, and the day it stops, `omnideck.dynamicModules` becomes the
      * only thing keeping it compiling and the drift is immediately visible. Every other
      * rule below, module-to-module included, applies to a split exactly as before.
+     *
+     * Not named `isDynamicFeature`: Gradle only treats an `is`-prefixed getter as a
+     * managed property when it returns a primitive boolean, so the abstract accessor
+     * would fail class generation ("Cannot have abstract method") before the task ran.
      */
-    @get:Input abstract val isDynamicFeature: Property<Boolean>
+    @get:Input abstract val dynamicFeature: Property<Boolean>
 
     init {
         group = "verification"
@@ -248,8 +254,8 @@ abstract class CheckArchitectureTask : DefaultTask() {
         val isSdkCore = path == ":platform:omnideck-sdk-core"
         val isSdk = path == ":platform:omnideck-sdk"
 
-        // AGP owns this edge on a dynamic feature; see [isDynamicFeature].
-        val baseAppEdgeIsAgpOwned = isDynamicFeature.getOrElse(false)
+        // AGP owns this edge on a dynamic feature; see [dynamicFeature].
+        val baseAppEdgeIsAgpOwned = dynamicFeature.getOrElse(false)
 
         deps.forEach { dep ->
             when {

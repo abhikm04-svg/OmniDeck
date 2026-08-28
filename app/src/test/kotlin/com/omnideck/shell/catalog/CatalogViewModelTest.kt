@@ -20,9 +20,11 @@ import com.omnideck.sdk.SemVer
 import com.omnideck.sdk.SemVerRange
 import com.omnideck.sdk.TeamRef
 import com.omnideck.testing.FakeTelemetryService
+import io.mockk.Deregisterable
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.registerInstanceFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,11 +54,26 @@ class CatalogViewModelTest {
     }
     private val telemetry = FakeTelemetryService()
 
+    /**
+     * MockK builds a placeholder value for every `any()` argument by calling the
+     * type's constructor, and [ModuleId] is a value class that rejects anything not
+     * reverse-DNS — so an unregistered `any<ModuleId>()` fails in the matcher, before
+     * the assertion it belongs to is ever evaluated. Registering a well-formed id is
+     * what lets a verification say "no module at all", rather than having to name one.
+     */
+    private lateinit var moduleIds: Deregisterable
+
     @Before
-    fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+    fun setUp() {
+        moduleIds = registerInstanceFactory { ModuleId("com.omnideck.placeholder") }
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+    }
 
     @After
-    fun tearDown() = Dispatchers.resetMain()
+    fun tearDown() {
+        moduleIds.deregister()
+        Dispatchers.resetMain()
+    }
 
     @Test
     fun `the catalog is whatever was discovered, in alphabetical order`() = runTest {

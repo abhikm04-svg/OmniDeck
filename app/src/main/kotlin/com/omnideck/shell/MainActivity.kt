@@ -201,6 +201,5 @@ class ActivityConfirmationLauncher @Inject constructor() : ConfirmationLauncher 
         delegate = null
     }
 
-    override suspend fun launch(intentSender: IntentSender): Boolean =
-        delegate?.invoke(intentSender) ?: false
+    override suspend fun launch(intentSender: IntentSender): Boolean = delegate?.invoke(intentSender) ?: false
 }

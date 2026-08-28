@@ -101,10 +101,8 @@ enum class SplitStatus {
 }
 
 /** The real thing. Kept free of policy so there is little here to get wrong untested. */
-class PlaySplitInstaller(
-    private val manager: SplitInstallManager,
-    private val confirmation: ConfirmationLauncher,
-) : SplitInstaller {
+class PlaySplitInstaller(private val manager: SplitInstallManager, private val confirmation: ConfirmationLauncher) :
+    SplitInstaller {
 
     /**
      * The latest state seen per session, because Play's consent dialog can only be

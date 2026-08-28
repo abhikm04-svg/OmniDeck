@@ -250,7 +250,7 @@ was a way the flip silently did nothing or silently broke:
   application plugin generates one string resource per on-demand module.
 - `checkArchitecture` exempts one edge for a dynamic feature: AGP compiles a split against
   `:app`, and that dependency is the mechanism, not a design choice. Every other rule still
-  applies. See the note on `isDynamicFeature` for what it costs.
+  applies. See the note on `CheckArchitectureTask.dynamicFeature` for what it costs.
 
 Verify the whole flip with `./gradlew :app:bundleRelease -Pomnideck.dynamicModules=<name>` —
 release rather than debug, because the generated R8 keep rule for the reflectively-loaded

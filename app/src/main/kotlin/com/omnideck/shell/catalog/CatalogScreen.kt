@@ -123,16 +123,8 @@ fun CatalogScreen(
     }
 
     pendingRemoval?.let { entry ->
-        ConfirmDialog(
-            title = "Remove ${entry.title}?",
-            // Says what actually happens rather than what sounds reassuring: the data
-            // goes now, the download does not necessarily come back immediately, and
-            // Play reclaims the space on its own schedule (deferredUninstall).
-            message = "Everything ${entry.title} has stored on this device is deleted straight away. " +
-                "Google Play frees the download itself later, so you may not see the space back " +
-                "immediately. You can install it again at any time.",
-            confirmLabel = "Remove",
-            destructive = true,
+        RemoveModuleDialog(
+            entry = entry,
             onConfirm = {
                 onRemove(entry.id)
                 pendingRemoval = null
@@ -140,6 +132,23 @@ fun CatalogScreen(
             onDismiss = { pendingRemoval = null },
         )
     }
+}
+
+@Composable
+private fun RemoveModuleDialog(entry: CatalogEntry, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    ConfirmDialog(
+        title = "Remove ${entry.title}?",
+        // Says what actually happens rather than what sounds reassuring: the data goes
+        // now, the download does not necessarily come back immediately, and Play
+        // reclaims the space on its own schedule (deferredUninstall).
+        message = "Everything ${entry.title} has stored on this device is deleted straight away. " +
+            "Google Play frees the download itself later, so you may not see the space back " +
+            "immediately. You can install it again at any time.",
+        confirmLabel = "Remove",
+        destructive = true,
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+    )
 }
 
 @Composable

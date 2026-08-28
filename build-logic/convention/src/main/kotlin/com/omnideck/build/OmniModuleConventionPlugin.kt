@@ -11,7 +11,6 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.TaskProvider
 
 /**
  * `omnideck.module` — applied to every feature module.
@@ -74,6 +73,19 @@ class OmniModuleConventionPlugin : Plugin<Project> {
             outputDir.set(generatedRoot.map { it.dir("manifest") })
         }
 
+        // Redirected here, at apply time, and not from the afterEvaluate below. AGP
+        // reads the source set's manifest location in an afterEvaluate of its own,
+        // registered when com.android.dynamic-feature was applied — which is before
+        // omnideck.module is, so before ours. Set later, this had no effect at all:
+        // AGP went on pointing at src/main/AndroidManifest.xml, the file an on-demand
+        // module deliberately does not have, and the split failed to build with
+        // "mainManifest specifies file ... which doesn't exist".
+        pluginManager.withPlugin("com.android.dynamic-feature") {
+            val generatedManifest = generatedRoot.get().dir("manifest").file("AndroidManifest.xml")
+            extensions.getByType(DynamicFeatureExtension::class.java)
+                .sourceSets.getByName("main").manifest.srcFile(generatedManifest.asFile)
+        }
+
         // OD-301. The descriptor is published as a build artifact as well as (for a
         // bundled module) packaged into the module's own assets, because an on-demand
         // module's assets ship inside its split — they arrive *after* the download the
@@ -112,7 +124,7 @@ class OmniModuleConventionPlugin : Plugin<Project> {
 
             if (onDemand) {
                 verifySplitName(namespace)
-                applyDistManifest(android, distManifestTask)
+                verifyNoAuthoredManifest()
             } else {
                 // Packaged with the module only when the module is packaged with the
                 // base. For a split it would be both invisible before install and a
@@ -151,7 +163,7 @@ class OmniModuleConventionPlugin : Plugin<Project> {
     }
 
     /**
-     * Gives the split a `<dist:delivery><dist:on-demand/></dist:delivery>` manifest.
+     * Guards the generated `<dist:delivery><dist:on-demand/></dist:delivery>` manifest.
      *
      * There is no Gradle DSL for this — delivery is manifest-only — and **the default
      * is install-time**. A dynamic feature with no `<dist:module>` block ships with the
@@ -161,15 +173,13 @@ class OmniModuleConventionPlugin : Plugin<Project> {
      * `-Pomnideck.dynamicModules=` mean what it says.
      *
      * A module that has its own `AndroidManifest.xml` is a hard failure rather than a
-     * silent overwrite. AGP's source set holds exactly one manifest, so pointing it
-     * here would drop whatever the author declared — a lost `<queries>` or
+     * silent overwrite. AGP's source set holds exactly one manifest, and the source
+     * set has already been repointed at the generated one by the time this runs, so
+     * whatever the author declared would be dropped — a lost `<queries>` or
      * `<provider>` that fails at runtime, on a device, with nothing pointing back to
      * this line.
      */
-    private fun Project.applyDistManifest(
-        android: CommonExtension<*, *, *, *, *, *>,
-        task: TaskProvider<GenerateDistManifestTask>,
-    ) {
+    private fun Project.verifyNoAuthoredManifest() {
         val authored = file("src/main/AndroidManifest.xml")
         check(!authored.exists()) {
             "$path is delivered on demand and also declares its own AndroidManifest.xml. " +
@@ -179,8 +189,6 @@ class OmniModuleConventionPlugin : Plugin<Project> {
                 "omnideck.dynamicModules, or move the declarations out of the manifest.\n" +
                 distManifestFor(name)
         }
-        android.sourceSets.getByName("main").manifest
-            .srcFile(task.get().outputDir.get().file("AndroidManifest.xml").asFile)
     }
 
     private companion object {

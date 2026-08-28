@@ -8,6 +8,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.configure
 
@@ -63,6 +64,22 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             )
         }
 
+        // Staged through a task rather than handed to the source set as a bare
+        // configuration. AGP turns an asset srcDir into a plain file list while it is
+        // still configuring, which both resolves this configuration at configuration
+        // time and drops the dependency on the tasks that produce it — leaving
+        // :app:mergeAssets reading a directory nothing had been told to generate
+        // ("uses this output of task :modules:<id>:generateOmniModuleDescriptor
+        // without declaring an explicit or implicit dependency"). A Sync task's
+        // outputs carry that dependency, and it resolves at execution time.
+        val stageDescriptors = tasks.register(
+            "stageOnDemandModuleDescriptors",
+            Sync::class.java,
+        ) {
+            from(onDemandDescriptors)
+            into(layout.buildDirectory.dir("generated/omnideck/assets"))
+        }
+
         // Play reads `dist:title` to name a download in its own confirmation dialog,
         // *before* the split exists — so the string has to live in the base APK, and
         // the module that owns it cannot supply it. Generated here from the same
@@ -86,7 +103,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
 
             dynamicFeatures += dynamic.map { ":modules:$it" }.toSet()
 
-            sourceSets.getByName("main").assets.srcDir(onDemandDescriptors)
+            sourceSets.getByName("main").assets.srcDir(stageDescriptors)
             sourceSets.getByName("main").res.srcDir(moduleTitlesTask)
 
             signingConfigs {
@@ -150,6 +167,14 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 generateLocaleConfig = true
             }
         }
+
+        // Naming a task as a source directory tells AGP *where* to look, not that
+        // anything has to run first — the same wiring omnideck.module needs for the
+        // module-side generators. Without this the split linked against a base APK
+        // that had never generated its title string and AAPT failed with "resource
+        // string/omnideck_module_title_<id> not found", which reads like a missing
+        // resource and is actually a missing task.
+        tasks.named("preBuild").configure { dependsOn(moduleTitlesTask, stageDescriptors) }
 
         configureKotlinAndroid()
         configureTestDependencies()
