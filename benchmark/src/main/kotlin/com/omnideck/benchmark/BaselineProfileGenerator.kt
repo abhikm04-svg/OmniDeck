@@ -34,8 +34,14 @@ class BaselineProfileGenerator {
     @get:Rule
     val rule = BaselineProfileRule()
 
+    // includeInStartupProfile also emits a *startup* profile, which AGP uses to lay
+    // out the dex files so the startup path is contiguous on disk. It is a separate
+    // win from AOT compilation and free once the interaction is already recorded.
     @Test
-    fun startupAndFirstModule() = rule.collect(packageName = TARGET_PACKAGE) {
+    fun startupAndFirstModule() = rule.collect(
+        packageName = TARGET_PACKAGE,
+        includeInStartupProfile = true,
+    ) {
         pressHome()
         startActivityAndWait()
 
@@ -46,7 +52,13 @@ class BaselineProfileGenerator {
         // Activating a module pulls its entry point, its initialize and its first
         // screen into the profile. Whichever module is present — naming one would
         // make the profile wrong for every other build.
-        device.wait(Until.findObject(By.descContains(TILE_MARKER)), TIMEOUT_MS)?.click()
+        // checkNotNull, not `?.`: a missed lookup here would record a profile that
+        // silently omits every module method, and the only symptom would be a slower
+        // first activation in production.
+        checkNotNull(device.wait(Until.findObject(By.descContains(TILE_MARKER)), TIMEOUT_MS)) {
+            "No installed module tile on the home grid — the recorded profile would " +
+                "cover the Shell only."
+        }.click()
         device.waitForIdle()
     }
 

@@ -54,13 +54,36 @@ plug-and-play fitness test — its unit-level half runs in `:app:testDebugUnitTe
 Performance work also needs a device, and is deliberately outside the ordinary build:
 
 ```bash
-./gradlew :benchmark:connectedBenchmarkBenchmarkAndroidTest            # OD-213 budgets
+./gradlew :benchmark:connectedBenchmarkAndroidTest            # OD-213 budgets
 ./gradlew -Pomnideck.baselineProfiles=true :app:generateBaselineProfile  # OD-214
 ```
 
 The Baseline Profile *plugin* is opt-in because it hangs an adb run off `assemble`, which would
 make `./gradlew build` need a device. Shipping a profile does not need it: the recorded
-`app/src/main/baseline-prof.txt` is merged by AGP on every release build.
+`app/src/main/baseline-prof.txt` and `startup-prof.txt` are merged by AGP on every release build,
+which is why they live in `src/main` rather than in the plugin's `src/release/generated/` output
+directory — that path only exists while the opt-in plugin is applied, and a profile that is
+silently dropped from the release is the exact failure this arrangement is meant to prevent.
+Verify a change with `./gradlew :app:assembleRelease` and check that
+`app/build/intermediates/merged_art_profile/release/**/baseline-prof.txt` still contains the
+`com/omnideck` rules.
+
+**On OEM builds that block broadcasts to stopped packages** — observed on Xiaomi/HyperOS, where
+`am broadcast` to a force-stopped package returns `result=0` even with
+`--include-stopped-packages` — macrobenchmark cannot reach `androidx.profileinstaller`. Two
+consequences, neither a defect in this repo:
+
+```bash
+# skip the shader-cache drop, which is otherwise attempted on every compilation mode
+./gradlew :benchmark:connectedBenchmarkAndroidTest \
+    -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.dropShaders.enable=false
+```
+
+and `StartupBenchmark.startupWithBaselineProfile` cannot run there at all — it uses
+`BaselineProfileMode.Require`, which exists precisely so the test cannot silently measure an
+uncompiled app. Get that number from a Pixel or an AOSP emulator; do not weaken it to `Require`'s
+softer siblings to make one phone go green. The same OEM throttles repeated ADB installs, so an
+occasional `INSTALL_FAILED_USER_RESTRICTED` on a connected-test run is the phone, not the build.
 
 On Windows, `clean` fails with "Unable to delete directory" while the daemon and Lint hold jars
 open — run `./gradlew --stop` first.

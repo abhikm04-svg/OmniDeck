@@ -7,11 +7,22 @@
 // Neither runs in the ordinary build — they need a device, and a build type that is
 // minified and non-debuggable, because measuring a debug build measures the debugger:
 //
-//   ./gradlew :benchmark:connectedBenchmarkBenchmarkAndroidTest          # the numbers
+//   ./gradlew :benchmark:connectedBenchmarkAndroidTest          # the numbers
 //   ./gradlew -Pomnideck.baselineProfiles=true :app:generateBaselineProfile
 //
 // Budgets they exist to enforce (architecture.md §16): cold start p90 <= 1200 ms,
 // module activation <= 400 ms.
+//
+// First measured run (POCO/air, Android 15, API 35, arm64, cpuLocked, 10 iterations),
+// against the Shell plus one bundled module:
+//
+//   timeToInitialDisplayMs   p90 486   (CompilationMode.None — the pessimistic floor)
+//   module.activateSumMs     p90   4   (kernel span: load + initialize + register)
+//
+// Both are recorded here rather than asserted in code on purpose: a budget belongs to
+// a reference device (OD-607), and a threshold enforced against whatever phone is
+// plugged in fails for the wrong reasons. What the harness guarantees today is that
+// the numbers exist and are comparable run to run.
 
 plugins {
     alias(libs.plugins.android.test)
@@ -77,6 +88,11 @@ android {
         // module resolve against the app when a build type has no exact counterpart.
         create("benchmark") {
             isDebuggable = true
+            // Without this the APK ships unsigned and the device rejects it with
+            // INSTALL_PARSE_FAILED_NO_CERTIFICATES. A test module inherits no signing
+            // config from its target, and `release` — which this type copies from over
+            // in :app — has none to inherit either.
+            signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
         }
     }
