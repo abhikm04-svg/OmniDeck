@@ -19,6 +19,28 @@ class RouteTest {
     }
 
     @Test
+    fun `a route must not carry a fragment`() {
+        // Unstripped, `#` is absorbed rather than ignored: it would ride into a path
+        // argument or a query value. ExternalRoutes strips external URIs; this guards
+        // the in-process callers it never sees.
+        val error = runCatching { Route("omnideck://notes/note/42#comments") }.exceptionOrNull()
+
+        assertThat(error).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    @Test
+    fun `a percent-encoded hash is a literal, not a fragment`() {
+        assertThat(Route("omnideck://notes/note/42%23c").path).isEqualTo("note/42%23c")
+    }
+
+    @Test
+    fun `of rejects a fragment smuggled through the path`() {
+        val error = runCatching { Route.of(ModuleId("com.omnideck.notes"), "note/42#c") }.exceptionOrNull()
+
+        assertThat(error).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    @Test
     fun `host is the module short id`() {
         assertThat(Route("omnideck://finance/account/42").host).isEqualTo("finance")
     }

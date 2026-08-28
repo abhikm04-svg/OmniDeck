@@ -5,6 +5,9 @@ import kotlinx.serialization.Serializable
 /**
  * Every navigable surface in OmniDeck is a URI: `omnideck://<shortId>/<path>?<query>`.
  *
+ * That grammar is the whole grammar — there is no fragment, and the `init` block
+ * rejects one rather than let it through to be misread.
+ *
  * This is the mechanism behind the "one-click shop" (architecture.md §10.1): a route
  * can be emitted by a module, a notification, an App Link or an app shortcut, and the
  * Router will install and initialise the owning module on the way to the destination
@@ -15,6 +18,19 @@ data class Route(val uri: String) {
     init {
         require(uri.startsWith(SCHEME_PREFIX)) {
             "Route must start with '$SCHEME_PREFIX', was '$uri'"
+        }
+        // `?` is this class's only delimiter, so a `#` is not ignored, it is absorbed:
+        // it lands inside [path], inside a [query] value, or inside a placeholder that
+        // RoutePattern binds — `omnideck://n/note/42#c` yields a `noteId` of `42#c`,
+        // and `?omnideck_result_to=abc#c` a correlation id matching nothing the Router
+        // issued. Teaching six hand-rolled parse sites a second delimiter is the more
+        // expensive invariant; refusing the character is the cheap one.
+        //
+        // External URIs are stripped at the Shell's boundary (`ExternalRoutes`), which
+        // is where attacker-supplied input arrives. This catches the in-process callers
+        // that boundary never sees. Percent-encoded `%23` is a literal, and stays legal.
+        require('#' !in uri) {
+            "Route must not carry a fragment, was '$uri'"
         }
     }
 
