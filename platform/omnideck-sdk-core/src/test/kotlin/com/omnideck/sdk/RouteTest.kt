@@ -186,6 +186,32 @@ class RouteTest {
     }
 
     @Test
+    fun `a pattern must carry the scheme`() {
+        // Without it the scheme rides into the first segment and the pattern is dead:
+        // registered, reported as fine, matching nothing.
+        val error = runCatching { RoutePattern("notes/detail/{id}") }.exceptionOrNull()
+
+        assertThat(error).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    @Test
+    fun `a pattern must not carry a fragment`() {
+        val error = runCatching { RoutePattern("omnideck://notes/detail/{id}#c") }.exceptionOrNull()
+
+        assertThat(error).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    @Test
+    fun `a pattern must not carry a query`() {
+        // extract() matches against the route minus its query, so a pattern holding one
+        // compares against a string that never has one — see the test above that the
+        // query is ignored on purpose.
+        val error = runCatching { RoutePattern("omnideck://notes/search?q=kotlin") }.exceptionOrNull()
+
+        assertThat(error).isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    @Test
     fun `a literal pattern is more specific than a placeholder one`() {
         // Specificity is what makes notes/detail/new reachable alongside
         // notes/detail/{id} — without it the create screen is unreachable.

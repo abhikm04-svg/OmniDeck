@@ -92,9 +92,32 @@ data class Route(val uri: String) {
 /**
  * A route pattern with `{placeholder}` segments, e.g.
  * `omnideck://finance/account/{accountId}`.
+ *
+ * Everything the `init` block rejects shares one failure mode: the pattern is accepted,
+ * registered, and then matches nothing, ever. A dead deep link raises no error anywhere
+ * — it is simply a destination no one can reach, discovered by a user report.
  */
 @Serializable
 data class RoutePattern(val pattern: String) {
+    init {
+        // [segments] strips the scheme prefix and splits on '/'. Without the prefix the
+        // scheme rides into the first segment, and every [Route] carries one — its own
+        // init requires it — so the two can never line up.
+        require(pattern.startsWith(Route.SCHEME_PREFIX)) {
+            "RoutePattern must start with '${Route.SCHEME_PREFIX}', was '$pattern'"
+        }
+        // A Route cannot hold a fragment at all, so a pattern carrying one matches
+        // nothing by construction.
+        require('#' !in pattern) {
+            "RoutePattern must not carry a fragment, was '$pattern'"
+        }
+        // [extract] compares against `route.uri.substringBefore('?')`, because a pattern
+        // addresses a path and the query reaches the destination as [RouteArgs] instead.
+        // A '?' left here is compared against a string that never contains one.
+        require('?' !in pattern) {
+            "RoutePattern must not carry a query, was '$pattern'"
+        }
+    }
 
     private val segments: List<String> get() = pattern.removePrefix(Route.SCHEME_PREFIX).split('/')
 
