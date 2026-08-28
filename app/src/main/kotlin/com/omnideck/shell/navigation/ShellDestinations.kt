@@ -2,6 +2,7 @@ package com.omnideck.shell.navigation
 
 import com.omnideck.kernel.router.MutableDestinationRegistry
 import com.omnideck.sdk.ModuleId
+import com.omnideck.shell.catalog.CatalogRoute
 import com.omnideck.shell.privacy.PrivacyCentreRoute
 import com.omnideck.shell.settings.SettingsRoute
 import com.omnideck.shell.status.ModuleStatusRoute
@@ -31,6 +32,7 @@ class ShellDestinations @Inject constructor() {
         val shell = registry.scopedTo(ShellRoutes.MODULE_ID)
         shell.destination(ShellRoutes.SETTINGS) { SettingsRoute() }
         shell.destination(ShellRoutes.PRIVACY) { PrivacyCentreRoute() }
+        shell.destination(ShellRoutes.CATALOG) { CatalogRoute() }
         shell.destination(ShellRoutes.MODULE_STATUS_PATTERN) { args ->
             ModuleStatusRoute(ModuleId(args.string("moduleId")))
         }

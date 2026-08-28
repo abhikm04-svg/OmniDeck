@@ -1,7 +1,6 @@
 package com.omnideck.shell
 
 import com.google.common.truth.Truth.assertThat
-import com.omnideck.generated.GeneratedModuleRegistry
 import org.junit.Test
 import java.io.File
 
@@ -18,6 +17,12 @@ import java.io.File
  * sample data; production code may not, because that is the coupling that turns
  * "adding a module is a directory" back into "adding a module is a PR against the
  * Shell".
+ *
+ * The module ids come from the module directories themselves rather than from the
+ * generated registry (OD-301). The registry holds only the *bundled* modules, so
+ * sourcing from it would quietly stop checking a module the moment it was flipped
+ * onto on-demand delivery — exactly when the Shell is most likely to grow a reference
+ * to it.
  */
 class ShellIsolationFitnessTest {
 
@@ -39,7 +44,7 @@ class ShellIsolationFitnessTest {
     fun `the Shell's build file names no module either`() {
         val buildFile = repoRoot().resolve("app/build.gradle.kts").readText()
 
-        GeneratedModuleRegistry.factories.keys.forEach { id ->
+        moduleIds().forEach { id ->
             assertThat(buildFile).doesNotContain(id)
             assertThat(buildFile).doesNotContain(id.substringAfterLast('.'))
         }
@@ -58,11 +63,26 @@ class ShellIsolationFitnessTest {
      * that happens to match a short id in a comment. A blunt substring match on the
      * short id alone would do the latter constantly and get the test deleted.
      */
-    private fun moduleReferences(): Set<String> = GeneratedModuleRegistry.factories.keys
+    private fun moduleReferences(): Set<String> = moduleIds()
         .flatMap { id ->
             val shortId = id.substringAfterLast('.')
             listOf(id, "omnideck://$shortId", "\"$shortId\"")
         }
+        .toSet()
+
+    /**
+     * Every module in the repository, by the id the build treats as authoritative:
+     * `android.namespace` in the module's own build file, which is what
+     * `omnideck.module` writes into the descriptor and the keep rule.
+     *
+     * Read from disk rather than from the build's output so this holds whichever
+     * delivery mode the build ran in, and so a module that failed to build is still
+     * checked rather than silently skipped.
+     */
+    private fun moduleIds(): Set<String> = (repoRoot().resolve("modules").listFiles() ?: emptyArray())
+        .filter(File::isDirectory)
+        .mapNotNull { dir -> dir.resolve("build.gradle.kts").takeIf(File::isFile) }
+        .mapNotNull { NAMESPACE.find(it.readText())?.groupValues?.get(1) }
         .toSet()
 
     private fun productionSources(): List<File> = listOf("app/src/main", "platform/kernel/src/main")
@@ -85,5 +105,8 @@ class ShellIsolationFitnessTest {
 
     private companion object {
         val SOURCE_EXTENSIONS = setOf("kt", "java", "xml")
+
+        /** `namespace = "com.omnideck.notes"` inside a module's `android { }` block. */
+        val NAMESPACE = Regex("""namespace\s*=\s*"([^"]+)"""")
     }
 }

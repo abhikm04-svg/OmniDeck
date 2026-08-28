@@ -162,3 +162,67 @@ jobs:
           cache-read-only: true
       - name: checkArchitecture across all modules
         run: ./gradlew checkArchitecture --stacktrace
+
+  # The Phase 3 exit gate: on-demand delivery is a *deployment* decision (ADR-001), so
+  # flipping every module onto a Play feature split must need no source change at all.
+  # Asserting that in prose lasts until the first module quietly grows a dependency
+  # that only resolves when it is bundled, so it is built here on every run instead.
+  #
+  # Release rather than debug on purpose. The whole reason `omnideck.module` generates
+  # an R8 keep rule is that a split's entry point is loaded reflectively, and losing it
+  # fails **in release builds only** — the one failure mode in this architecture that a
+  # debug build cannot see. `bundleRelease` also packages the actual splits, which is
+  # what catches a descriptor left in a split instead of the base.
+  on-demand-delivery:
+    name: On-demand delivery (OD-301)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+
+      - name: Discover modules
+        id: modules
+        run: |
+          modules=$(find modules -mindepth 2 -maxdepth 2 -name build.gradle.kts -printf '%h\n' \
+            | xargs -r -n1 basename | sort | paste -sd, -)
+          echo "list=$modules" >> "$GITHUB_OUTPUT"
+          echo "Delivering on demand: ${modules:-<none>}"
+
+      # The module list comes from directory names in the checked-out branch, so it is
+      # attacker-controllable on a fork PR. Passed through the environment and quoted
+      # rather than interpolated into the command line, where a directory named with
+      # shell metacharacters would execute inside the runner.
+      - name: Build every module as a Play feature split
+        if: steps.modules.outputs.list != ''
+        env:
+          OMNIDECK_DYNAMIC_MODULES: ${{ steps.modules.outputs.list }}
+        run: ./gradlew :app:bundleRelease "-Pomnideck.dynamicModules=$OMNIDECK_DYNAMIC_MODULES" --stacktrace
+
+      # The fitness tests have to mean something in this mode too: the registry now
+      # covers no module, the descriptors still cover all of them, and no Shell source
+      # may name one. Layering is re-checked because a split's dependency on the base
+      # APK is the one edge AGP adds that the rules cannot forbid.
+      - name: Fitness functions hold in on-demand mode
+        if: steps.modules.outputs.list != ''
+        env:
+          OMNIDECK_DYNAMIC_MODULES: ${{ steps.modules.outputs.list }}
+        run: |
+          ./gradlew :app:testDebugUnitTest checkArchitecture \
+            "-Pomnideck.dynamicModules=$OMNIDECK_DYNAMIC_MODULES" --stacktrace
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: on-demand-reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          retention-days: 14

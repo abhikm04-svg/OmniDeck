@@ -7,6 +7,7 @@ import com.omnideck.sdk.ModuleId
 import com.omnideck.sdk.OmniModule
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
@@ -25,8 +26,10 @@ import kotlinx.coroutines.withContext
  *     the process restarts — users see a spinner complete and then nothing happens.
  *     That is why [classLoader] is a lambda: it must be re-read *after* an install,
  *     never captured at construction.
- *  2. `REQUIRES_USER_CONFIRMATION` must reach the UI, or large and metered downloads
- *     stall silently at 0% (OD-302).
+ *  2. `REQUIRES_USER_CONFIRMATION` must reach the UI *and* be answered, or large and
+ *     metered downloads stall silently at 0% (OD-302). Play holds such a session
+ *     indefinitely — it never times out — so the dialog is launched here rather than
+ *     left to whichever screen happens to be collecting the progress flow.
  */
 class FeatureSplitProvider(
     private val installer: SplitInstaller,
@@ -45,9 +48,35 @@ class FeatureSplitProvider(
 
         return flow {
             installer.install(id.splitName).collect { update ->
-                toProgress(update)?.let { emit(it) }
+                val progress = toProgress(update) ?: return@collect
+                emit(progress)
+                if (progress is InstallProgress.RequiresUserConfirmation) {
+                    confirm(update.sessionId)
+                }
             }
         }
+    }
+
+    /**
+     * Asks Play to show its consent dialog, and reports a dead install if it cannot.
+     *
+     * The failure branch matters more than it looks. Nothing further arrives on a
+     * session whose confirmation was never shown, so without it the collector waits
+     * on a flow that will not complete: the Router's `first()` on a terminal progress
+     * never returns, the tile stays at 0%, and the user has nothing to retry.
+     */
+    private suspend fun FlowCollector<InstallProgress>.confirm(sessionId: Int) {
+        if (installer.requestUserConfirmation(sessionId)) return
+        emit(
+            InstallProgress.Failed(
+                code = CONFIRMATION_UNAVAILABLE,
+                message = "OmniDeck could not ask for permission to download this module. " +
+                    "Open OmniDeck and try again.",
+                // The usual cause is the app being in the background when Play asked,
+                // which the next attempt from a visible screen resolves.
+                retryable = true,
+            ),
+        )
     }
 
     override suspend fun uninstall(id: ModuleId) {
@@ -129,5 +158,15 @@ class FeatureSplitProvider(
         -> true
 
         else -> false
+    }
+
+    companion object {
+        /**
+         * Not one of Play's codes — the install never got as far as asking Play
+         * anything. Negative so it cannot collide with a future `SplitInstallErrorCode`,
+         * and distinct from `PlaySplitInstaller`'s own -1 so telemetry can tell "Play
+         * refused to start" from "we could not ask the user".
+         */
+        const val CONFIRMATION_UNAVAILABLE = -2
     }
 }

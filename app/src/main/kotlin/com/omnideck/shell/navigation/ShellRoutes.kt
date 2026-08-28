@@ -24,12 +24,17 @@ object ShellRoutes {
     const val SETTINGS = "omnideck://shell/settings"
     const val PRIVACY = "omnideck://shell/privacy"
 
+    /** Acquire and remove modules (OD-303). */
+    const val CATALOG = "omnideck://shell/catalog"
+
     /** Status and recovery for one module: quarantined, gated, failed to install. */
     const val MODULE_STATUS_PATTERN = "omnideck://shell/module/{moduleId}"
 
     fun settings(): Route = Route(SETTINGS)
 
     fun privacy(): Route = Route(PRIVACY)
+
+    fun catalog(): Route = Route(CATALOG)
 
     fun moduleStatus(id: ModuleId): Route = Route("omnideck://shell/module/${id.value}")
 }

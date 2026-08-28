@@ -229,7 +229,33 @@ lives in `Extensions.kt`. Convention plugins take AGP/Kotlin/KSP as `compileOnly
 from the consuming build's root `plugins { ... apply false }` block and `libs.versions.toml`.
 
 Flipping a module to on-demand delivery is a Gradle property, not a code change:
-`-Pomnideck.dynamicModules=<id>,<id>` moves it from `implementation` to `dynamicFeatures`.
+`-Pomnideck.dynamicModules=<name>,<name>`, naming Gradle project directories under `modules/`.
+Everything that follows from it is derived (OD-301), and all of it matters — each piece below
+was a way the flip silently did nothing or silently broke:
+
+- `omnideck.android.library` **delegates to `omnideck.android.feature`** for a listed module, so
+  the module's own build file does not change. The two plugins are kept deliberately identical
+  apart from the Android plugin they apply.
+- The module's descriptor records `delivery=FEATURE_SPLIT`, which is what makes the kernel pick
+  `FeatureSplitProvider`. Before Phase 3 it always said `BUNDLED`, so a flipped module was handed
+  to the bundled provider — which reports every module installed and then fails to find a class
+  that is not on the device.
+- The descriptor is **published as a Gradle artifact and packaged into the base APK**, because a
+  dynamic feature's assets ship inside its split: left there, the descriptor would arrive only
+  after the download it exists to trigger, so the module could never be advertised at all.
+- A `<dist:module>` manifest with `<dist:on-demand/>` is generated for the split. There is no
+  Gradle DSL for delivery, and **the default is install-time** — a split without it ships with
+  the base APK and the entire acquisition path is silently never exercised.
+- `dist:title` must resolve in the *base* module (Play reads it before the split exists), so the
+  application plugin generates one string resource per on-demand module.
+- `checkArchitecture` exempts one edge for a dynamic feature: AGP compiles a split against
+  `:app`, and that dependency is the mechanism, not a design choice. Every other rule still
+  applies. See the note on `isDynamicFeature` for what it costs.
+
+Verify the whole flip with `./gradlew :app:bundleRelease -Pomnideck.dynamicModules=<name>` —
+release rather than debug, because the generated R8 keep rule for the reflectively-loaded
+`ModuleEntryPoint` is the one thing here that can only fail in a minified build. CI does this on
+every run (the `on-demand-delivery` job).
 
 ### Testing
 

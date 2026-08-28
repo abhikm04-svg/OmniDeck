@@ -101,6 +101,17 @@ class ShellViewModel @Inject constructor(
 
     fun onPrivacy() = viewModelScope.launch { navigate(ShellRoutes.privacy()) }
 
+    /** The Catalog (OD-303) — install and remove modules. */
+    fun onCatalog() = viewModelScope.launch { navigate(ShellRoutes.catalog()) }
+
+    /**
+     * Why a module is unusable, and what can be done about it (OD-208).
+     *
+     * Routed rather than pushed directly, so a link the Catalog makes and a link the
+     * Router makes after a failed acquisition land in exactly the same place.
+     */
+    fun onModuleStatus(id: ModuleId) = viewModelScope.launch { navigate(ShellRoutes.moduleStatus(id)) }
+
     /** Retry from the module status screen, after a failed install or a cleared quarantine. */
     fun onRetryModule(id: ModuleId) = viewModelScope.launch {
         onBack()

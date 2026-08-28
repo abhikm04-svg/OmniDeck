@@ -40,6 +40,55 @@ class ModuleDiscoveryTest {
         assertThat(source.descriptors()).isEmpty()
     }
 
+    // -- the descriptor contract (OD-301) -----------------------------------
+    //
+    // The delivery kind decides which ModuleProvider handles a module, and the
+    // bundled provider reports every module installed. Reading it wrong therefore
+    // does not fail here — it fails on a device, as a missing class, in a release
+    // build. These are cheap and they are the only place that decision is checked.
+
+    private fun descriptorProps(vararg pairs: Pair<String, String>) = java.util.Properties().apply {
+        pairs.forEach { (key, value) -> setProperty(key, value) }
+    }
+
+    @Test
+    fun `the delivery kind the build wrote is the one the kernel reads`() {
+        val descriptor = moduleDescriptorFrom(
+            descriptorProps("id" to "com.omnideck.notes", "delivery" to "FEATURE_SPLIT"),
+        )
+
+        assertThat(descriptor.delivery).isEqualTo(DeliveryKind.FEATURE_SPLIT)
+        assertThat(descriptor.id).isEqualTo(ModuleId("com.omnideck.notes"))
+    }
+
+    @Test
+    fun `a descriptor with no delivery line is treated as bundled`() {
+        // Descriptors generated before Phase 3 have no delivery line, and a module in
+        // the base APK is exactly what they described.
+        val descriptor = moduleDescriptorFrom(descriptorProps("id" to "com.omnideck.notes"))
+
+        assertThat(descriptor.delivery).isEqualTo(DeliveryKind.BUNDLED)
+    }
+
+    @Test
+    fun `an unrecognised delivery kind falls back to bundled rather than failing discovery`() {
+        // Written by a newer build than this Shell. Bundled is the only safe reading:
+        // it is the one delivery kind that needs no capability this Shell might lack,
+        // and dropping the module entirely would make it invisible with no explanation.
+        val descriptor = moduleDescriptorFrom(
+            descriptorProps("id" to "com.omnideck.notes", "delivery" to "QUANTUM_ENTANGLEMENT"),
+        )
+
+        assertThat(descriptor.delivery).isEqualTo(DeliveryKind.BUNDLED)
+    }
+
+    @Test
+    fun `the entry point defaults to the module's own namespace`() {
+        val descriptor = moduleDescriptorFrom(descriptorProps("id" to "com.omnideck.notes"))
+
+        assertThat(descriptor.entryPointClass).isEqualTo("com.omnideck.notes.ModuleEntryPoint")
+    }
+
     // -- bundled loading ----------------------------------------------------
 
     class StubEntryPoint : OmniModule {
