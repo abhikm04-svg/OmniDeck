@@ -60,13 +60,23 @@ Performance work also needs a device, and is deliberately outside the ordinary b
 
 The Baseline Profile *plugin* is opt-in because it hangs an adb run off `assemble`, which would
 make `./gradlew build` need a device. Shipping a profile does not need it: the recorded
-`app/src/main/baseline-prof.txt` and `startup-prof.txt` are merged by AGP on every release build,
-which is why they live in `src/main` rather than in the plugin's `src/release/generated/` output
-directory — that path only exists while the opt-in plugin is applied, and a profile that is
-silently dropped from the release is the exact failure this arrangement is meant to prevent.
-Verify a change with `./gradlew :app:assembleRelease` and check that
+`app/src/main/baseline-prof.txt` is merged by AGP on every release build, which is why it lives
+in `src/main` rather than in the plugin's `src/release/generated/` output directory — that path
+is only a source set while the opt-in plugin is applied, and a profile silently dropped from the
+release is the exact failure this arrangement exists to prevent. Verify a change with
+`./gradlew :app:assembleRelease` and check that
 `app/build/intermediates/merged_art_profile/release/**/baseline-prof.txt` still contains the
-`com/omnideck` rules.
+`com/omnideck` rules — currently 962 of them, 167 from inside the module, which is the evidence
+that module activation is on the profiled path and not just the Shell's own startup.
+
+**Startup profiles do not work this way**, and a committed `startup-prof.txt` is dead weight: with
+the plugin off, `mergeReleaseStartupProfile` runs, reads no source set and writes nothing. Only
+the plugin registers a startup profile, and only into its own generated directory. Recording one
+still costs nothing — `BaselineProfileGenerator` passes `includeInStartupProfile = true` so the
+artifact exists the day the profile workflow moves to the plugin's generated-sources model
+(OD-607) — but note before relying on it that a single-interaction recording emits a startup
+profile byte-identical to the baseline profile. A startup profile is meant to be the *subset*
+reached during startup, and one that is the whole thing tells AGP's dex layout nothing.
 
 **On OEM builds that block broadcasts to stopped packages** — observed on Xiaomi/HyperOS, where
 `am broadcast` to a force-stopped package returns `result=0` even with
@@ -213,7 +223,8 @@ identity. Treat anything here as security-critical (`architecture.md` §12.2).
 Build files stay thin because `build-logic/` (a composite build) supplies the conventions:
 `omnideck.android.application` (Shell + module auto-wiring), `omnideck.android.library`,
 `omnideck.android.feature`, `omnideck.module` (feature modules), `omnideck.compose`,
-`omnideck.hilt`, `omnideck.jvm.library`, `omnideck.quality`. Shared Android/Kotlin/test config
+`omnideck.hilt`, `omnideck.jvm.library`, `omnideck.quality`, `omnideck.tooling` (the root-only
+`newModule` scaffolder, OD-211). Shared Android/Kotlin/test config
 lives in `Extensions.kt`. Convention plugins take AGP/Kotlin/KSP as `compileOnly`; versions come
 from the consuming build's root `plugins { ... apply false }` block and `libs.versions.toml`.
 

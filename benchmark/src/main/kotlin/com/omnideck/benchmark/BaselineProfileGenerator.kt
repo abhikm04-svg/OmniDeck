@@ -34,9 +34,13 @@ class BaselineProfileGenerator {
     @get:Rule
     val rule = BaselineProfileRule()
 
-    // includeInStartupProfile also emits a *startup* profile, which AGP uses to lay
-    // out the dex files so the startup path is contiguous on disk. It is a separate
-    // win from AOT compilation and free once the interaction is already recorded.
+    // includeInStartupProfile also emits a *startup* profile, for dex layout. Nothing
+    // consumes it today: with the Baseline Profile plugin off — the default here —
+    // `mergeReleaseStartupProfile` reads no source set and writes nothing, and only
+    // `baseline-prof.txt` reaches the release build. It is recorded anyway because it
+    // is free, and because a startup profile from a *single* interaction comes out
+    // byte-identical to the baseline profile, which is worth knowing before anyone
+    // wires it up expecting a layout hint from it.
     @Test
     fun startupAndFirstModule() = rule.collect(
         packageName = TARGET_PACKAGE,
