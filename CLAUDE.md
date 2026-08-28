@@ -81,9 +81,25 @@ consequences, neither a defect in this repo:
 
 and `StartupBenchmark.startupWithBaselineProfile` cannot run there at all — it uses
 `BaselineProfileMode.Require`, which exists precisely so the test cannot silently measure an
-uncompiled app. Get that number from a Pixel or an AOSP emulator; do not weaken it to `Require`'s
-softer siblings to make one phone go green. The same OEM throttles repeated ADB installs, so an
-occasional `INSTALL_FAILED_USER_RESTRICTED` on a connected-test run is the phone, not the build.
+uncompiled app. Do not weaken it to `Require`'s softer siblings to make one phone go green. The
+same OEM throttles repeated ADB installs, so an occasional `INSTALL_FAILED_USER_RESTRICTED` on a
+connected-test run is the phone, not the build.
+
+An emulator does run it, and is how to confirm that the committed profile is actually in the APK
+and installable by ART — but macrobenchmark refuses an emulator until told not to:
+
+```bash
+./gradlew :benchmark:connectedBenchmarkAndroidTest \
+    -Pandroid.testInstrumentationRunnerArguments.class=com.omnideck.benchmark.StartupBenchmark \
+    -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
+```
+
+Read the pass/fail there, not the milliseconds. `suppressErrors` silences the reason the number
+is unusable rather than removing it: the emulator reports `cpuLocked: false`, and on the same
+build where a physical device measured a 486 ms uncompiled p90 it has measured 1292-1431 ms.
+Taken as a budget that would fail Phase 2 for the host machine's scheduler. The first run after
+boot is worse still — a cold emulator ramps 2826 -> 902 ms across ten iterations, so a p90 from
+it can rank a profiled build *below* an unprofiled one.
 
 On Windows, `clean` fails with "Unable to delete directory" while the daemon and Lint hold jars
 open — run `./gradlew --stop` first.
