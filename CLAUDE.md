@@ -209,6 +209,51 @@ Navigation is URI-based: `omnideck://<shortId>/<path>`. `ShellNavHost` renders w
 `DestinationRegistry` resolves for the current route rather than pre-declaring routes, which is
 what lets a module installed *after* the Shell was built become navigable.
 
+### Deep links: two layers, only one needs a domain
+
+Navigation is URI-based, and there are two independent doors into it. Keeping them
+straight matters, because one is free and shipped and the other is blocked on money.
+
+- **`omnideck://<shortId>/<path>` — the custom scheme.** Needs no domain, no
+  verification, no infrastructure. It carries every internal link, notification tap and
+  app shortcut, and it is what the Router contract is built on. **Nothing in the module
+  system depends on App Links.**
+- **`https://<origin>/go/<shortId>/<path>` — the App Link mirror.** Requires a domain we
+  control: `.well-known/assetlinks.json` *is* the proof of ownership, and there is no
+  substitute for it. Buys links that are clickable in an inbox or a chat app, plus a
+  verified claim no other app can take.
+
+**There is currently no https intent filter, deliberately.** One existed for
+`omnideck.app`, which is registered to someone else; an intent filter is live behaviour
+regardless of `autoVerify`, so the Shell was offering itself in the chooser for a third
+party's URLs. It is withdrawn (OD-716). `ExternalRoutes.fromWeb`, the reserved `/go/`
+prefix and their tests are all kept and passing — the design is decided (ADR-011), only
+the origin is missing. The manifest carries the exact snippet to restore.
+
+Do **not** restore it against a free subdomain to "get App Links working". A shared link
+is permanent: publishing under an origin we intend to leave means either breaking every
+shared URL on migration or serving redirects from it forever. That is ADR-011's accepted
+debt, and the amendment rejects a temporary origin rather than merely deferring it. App
+Links pay off once users share URLs, which pre-launch is nobody.
+
+Two tickets, and they are not the same shape:
+
+- **OD-716** — stand up a public web origin for the privacy policy and account-deletion
+  page. **Blocks Play submission** independently of deep linking, and a *free* origin is
+  fine (Firebase Hosting Spark, Cloudflare Pages, GitHub Pages) because these are pages,
+  not identity. A policy page can move and only a link rots.
+- **OD-321** — publish `assetlinks.json` and restore the filter. Needs a **permanent**
+  origin. Re-scoped from Phase 3 to the Phase 7 launch gate on 2026-08-29.
+
+`scripts/assetlinks.py` does both halves of OD-321's mechanics: `generate --fingerprint
+<SHA256>` emits the file (the **Play App Signing** certificate's SHA-256 from Play
+Console, not the upload key — Play re-signs), and `verify` must exit 0 before the filter
+goes back. It checks what a browser spot-check hides: HTTPS with no redirect (Android
+does not follow them here), the `handle_all_urls` relation, the applicationId, and the
+fingerprint. It is not a CI gate on purpose — it asserts an origin we do not control —
+but it does run against any host, so the flow can be rehearsed on a throwaway origin
+without publishing links anyone can share.
+
 ### The isolation boundary
 
 `ModuleScopedServicesFactory` (`platform/kernel/.../services/`) builds a **separate**
