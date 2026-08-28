@@ -122,6 +122,28 @@ jobs:
             **/build/test-results/
           retention-days: 14
 
+  # Informational only — nothing here fails the build. Its own job for two reasons:
+  # it is a Docker action, so it builds a container before it runs anything, and the
+  # count is worth reading on its own rather than buried in a 60-minute build log.
+  #
+  # Pinned to the commit behind tag 6. A third-party action on a mutable tag runs
+  # whatever that tag points at today inside our runner; the workflow-level
+  # `contents: read` limits the blast radius but does not remove it.
+  #
+  # The exclusions matter more than they look: app/src/main/baseline-prof.txt is a
+  # generated 48,000-line ART profile, and counted as source it is roughly five times
+  # the size of everything a human wrote here.
+  cloc:
+    name: Count lines of code
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Count Lines of Code (cloc)
+        uses: djdefi/cloc-action@d4a7e15e4ff5219692f79ba71685af08955dcfc0 # 6
+        with:
+          options: --exclude-dir=build,.gradle,.kotlin --not-match-f=.*-prof\.txt$ --md
+
   # The Phase 0 exit gate: a module that reaches across a layering boundary must
   # fail CI, not merely get flagged in review. Kept as its own job so the signal
   # is unmistakable in the checks list.
