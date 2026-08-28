@@ -24,13 +24,19 @@ object ExternalRoutes {
 
     /**
      * The reserved path prefix that mirror lives under, e.g.
-     * `https://omnideck.app/go/notes/note/42`.
+     * `https://omnideck.app/go/notes/note/42` (ADR-011, architecture.md §10.1).
      *
      * Everything outside it belongs to the website and has to keep opening in a
      * browser — `omnideck.app/delete-account` above all, which Play requires to be
      * reachable as a public web page (architecture.md §19.2). The manifest filter
      * carries the same prefix, because once OD-321 flips `autoVerify` a filter on the
      * bare host stops the browser being offered for those URLs at all.
+     *
+     * Changing it is not a local edit: it breaks every link already shared under the
+     * old prefix, so it has to be settled before OD-321 publishes `assetlinks.json`.
+     * The two places that must agree are this constant and the manifest's
+     * `android:pathPrefix` — the manifest decides what the app is offered, this
+     * decides what it does with it.
      */
     const val WEB_PATH_PREFIX = "/go/"
 
