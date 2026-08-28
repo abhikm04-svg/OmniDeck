@@ -63,8 +63,9 @@
 
             <!--
               App Links (OD-204). Under the reserved /go/ prefix the web path maps
-              one-to-one onto the app's URI space (see ExternalRoutes), so a link
-              shared from a browser and a link shared from the app are the same link.
+              one-to-one onto the app's URI space (ADR-011, architecture.md §10.1; see
+              ExternalRoutes), so a link shared from a browser and a link shared from
+              the app are the same link.
 
               The prefix is what keeps the claim to the domain narrow. A filter on the
               bare host claims every URL on omnideck.app, including the public account
