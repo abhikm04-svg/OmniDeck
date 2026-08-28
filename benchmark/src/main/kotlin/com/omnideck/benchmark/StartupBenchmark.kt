@@ -32,10 +32,12 @@ import org.junit.runner.RunWith
  * force-stopped package, which is how macrobenchmark asks `androidx.profileinstaller`
  * to install the profile. Some OEM builds refuse that outright — Xiaomi/HyperOS was
  * observed returning `result=0` even with `--include-stopped-packages` — and
- * [startupWithBaselineProfile] cannot run there. `Require` stays: its whole job is to
- * refuse to report a number for an app it could not confirm was compiled, and a mode
- * that degrades quietly would report the [startupWithoutCompilation] number twice
- * under two different names.
+ * [startupWithBaselineProfile] cannot run there. Re-recording it on hardware that
+ * permits the broadcast is OD-318; until then this test has never produced a
+ * trustworthy number. `Require` stays: its whole job is to refuse to report a number
+ * for an app it could not confirm was compiled, and a mode that degrades quietly
+ * would report the [startupWithoutCompilation] number twice under two different
+ * names.
  */
 @RunWith(AndroidJUnit4::class)
 class StartupBenchmark {

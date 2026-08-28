@@ -54,8 +54,9 @@ val recordingProfiles =
 if (recordingProfiles) {
     // Records against a connected device or emulator, which is the producer plugin's
     // default when no Gradle Managed Device is configured. A managed device would be
-    // more reproducible and is OD-317; adding one now would download
-    // an AOSP image on every first build, for a profile recorded once a release.
+    // more reproducible and belongs to the Phase 6 profile automation (OD-607);
+    // adding one now would download an AOSP image on every first build, for a
+    // profile recorded once a release.
     apply(plugin = "androidx.baselineprofile")
 }
 

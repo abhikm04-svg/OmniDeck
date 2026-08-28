@@ -47,8 +47,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Every module route is reachable as a deep link through one entry point. -->
-            <intent-filter android:autoVerify="false">
+            <!--
+              Every module route is reachable as a deep link through one entry point.
+
+              No autoVerify here: verification only ever considers filters carrying
+              http/https data, so the attribute is inert on a custom scheme and would
+              read as though this filter were part of OD-321's flip.
+            -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -56,20 +62,32 @@
             </intent-filter>
 
             <!--
-              App Links (OD-204). The web path maps one-to-one onto the app's URI
-              space (see ExternalRoutes), so a link shared from a browser and a link
-              shared from the app are the same link.
+              App Links (OD-204). Under the reserved /go/ prefix the web path maps
+              one-to-one onto the app's URI space (see ExternalRoutes), so a link
+              shared from a browser and a link shared from the app are the same link.
+
+              The prefix is what keeps the claim to the domain narrow. A filter on the
+              bare host claims every URL on omnideck.app, including the public account
+              deletion page that Play requires to stay reachable in a browser
+              (architecture.md §19.2, omnideck.app/delete-account) — and once OD-321
+              turns verification on, "claims" means the browser stops being offered at
+              all. Per-module prefixes are not the alternative: naming a module in this
+              file would fail ShellIsolationFitnessTest and end G1.
 
               autoVerify stays false until assetlinks.json is published at the domain
-              (a store-readiness task, OD-321). Turning it on without the file makes
-              Android fail verification on every install and silently stop offering
-              the app at all — worse than the disambiguation chooser we get now.
+              (OD-321, carried from OD-204 into Phase 3). Turning it on without the
+              file makes Android fail verification on every install and silently stop
+              offering the app at all — worse than the disambiguation chooser we get
+              now.
             -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="omnideck.app" />
+                <data
+                    android:scheme="https"
+                    android:host="omnideck.app"
+                    android:pathPrefix="/go/" />
             </intent-filter>
         </activity>
 
