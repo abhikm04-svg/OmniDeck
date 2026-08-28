@@ -20,7 +20,7 @@
 //   module.activateSumMs     p90   4   (kernel span: load + initialize + register)
 //
 // Both are recorded here rather than asserted in code on purpose: a budget belongs to
-// a reference device (OD-607), and a threshold enforced against whatever phone is
+// a reference device (OD-317), and a threshold enforced against whatever phone is
 // plugged in fails for the wrong reasons. What the harness guarantees today is that
 // the numbers exist and are comparable run to run.
 
@@ -54,7 +54,7 @@ val recordingProfiles =
 if (recordingProfiles) {
     // Records against a connected device or emulator, which is the producer plugin's
     // default when no Gradle Managed Device is configured. A managed device would be
-    // more reproducible and is the Phase 6 move (OD-607); adding one now would download
+    // more reproducible and is OD-317; adding one now would download
     // an AOSP image on every first build, for a profile recorded once a release.
     apply(plugin = "androidx.baselineprofile")
 }
