@@ -217,6 +217,17 @@ jobs:
           ./gradlew :app:testDebugUnitTest checkArchitecture \
             "-Pomnideck.dynamicModules=$OMNIDECK_DYNAMIC_MODULES" --stacktrace
 
+      # Deliberately in the workspace the two steps above just built on demand, with
+      # no property and no clean. ADR-001 claims delivery is a switch, and a switch
+      # that only works one way in a fresh checkout is not one: the generated
+      # descriptor changes content with the mode, so anything that keeps a stale copy
+      # of it produces a base APK advertising modules it does not carry, or a bundle
+      # with the same asset in two modules. Both were real, and neither is visible in
+      # a build that only ever ran in one mode.
+      - name: The switch goes back
+        if: steps.modules.outputs.list != ''
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4

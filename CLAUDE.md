@@ -251,6 +251,14 @@ was a way the flip silently did nothing or silently broke:
 - `checkArchitecture` exempts one edge for a dynamic feature: AGP compiles a split against
   `:app`, and that dependency is the mechanism, not a design choice. Every other rule still
   applies. See the note on `CheckArchitectureTask.dynamicFeature` for what it costs.
+- The module's descriptor directory stays registered as an asset source folder in **both**
+  modes, and `generateOmniModuleDescriptor` empties it for a split rather than the plugin
+  deregistering it. AGP's asset merge is incremental over the files in its source folders, so
+  a folder that simply stops being one reports no removals and the merged output keeps the
+  descriptor the previous mode wrote. That is what makes the property safe to flip in a build
+  directory that already exists — otherwise `bundleRelease` fails with "Modules 'base' and
+  '<id>' contain entry ... with different content" going one way, and the base APK silently
+  loses every descriptor coming back. CI flips it back on every run (the "switch goes back" step).
 
 Verify the whole flip with `./gradlew :app:bundleRelease -Pomnideck.dynamicModules=<name>` —
 release rather than debug, because the generated R8 keep rule for the reflectively-loaded
