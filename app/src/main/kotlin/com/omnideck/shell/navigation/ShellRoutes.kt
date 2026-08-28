@@ -24,7 +24,7 @@ object ShellRoutes {
     const val SETTINGS = "omnideck://shell/settings"
     const val PRIVACY = "omnideck://shell/privacy"
 
-    /** Acquire and remove modules (OD-303). */
+    /** Acquire and remove modules (OD-305). */
     const val CATALOG = "omnideck://shell/catalog"
 
     /** Status and recovery for one module: quarantined, gated, failed to install. */

@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * OD-304. `SplitCompat.install()` in the Application makes a freshly installed
+     * OD-303. `SplitCompat.install()` in the Application makes a freshly installed
      * split's *code* reachable; its *resources* are only reachable from a context
      * that has also been patched. Modules contribute Composables rendered inside this
      * Activity (ADR-003), so without this a split's strings and drawables throw

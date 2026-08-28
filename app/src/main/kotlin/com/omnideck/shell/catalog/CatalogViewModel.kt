@@ -57,7 +57,7 @@ data class CatalogEntry(
 }
 
 /**
- * The Catalog (OD-303) — install, remove, and see why a module is not usable.
+ * The Catalog (OD-305) — install, remove, and see why a module is not usable.
  *
  * Deliberately not a navigator: acquisition is all it does, and the Shell's single
  * navigation owner ([com.omnideck.shell.ShellViewModel]) still decides what a tap
@@ -99,7 +99,7 @@ class CatalogViewModel @Inject constructor(
     }
 
     /**
-     * Removes a module and everything it stored.
+     * Removes a module and everything it stored (OD-307).
      *
      * `PurgeScope.ALL` rather than a bare uninstall: leaving a module's database
      * behind after the user removed it is the kind of quiet data retention the

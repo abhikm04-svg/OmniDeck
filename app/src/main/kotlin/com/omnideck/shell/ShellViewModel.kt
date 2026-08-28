@@ -101,7 +101,7 @@ class ShellViewModel @Inject constructor(
 
     fun onPrivacy() = viewModelScope.launch { navigate(ShellRoutes.privacy()) }
 
-    /** The Catalog (OD-303) — install and remove modules. */
+    /** The Catalog (OD-305) — install and remove modules. */
     fun onCatalog() = viewModelScope.launch { navigate(ShellRoutes.catalog()) }
 
     /**

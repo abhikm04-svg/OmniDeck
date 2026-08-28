@@ -42,7 +42,7 @@ import com.omnideck.sdk.ModuleState
 import com.omnideck.shell.ShellViewModel
 
 /**
- * The Catalog (OD-303) — where a user acquires and removes modules.
+ * The Catalog (OD-305) — where a user acquires and removes modules.
  *
  * On-demand delivery is only half a feature without it: a module that is not in the
  * base APK has no tile to tap until something asks Play for it, and "free up space"

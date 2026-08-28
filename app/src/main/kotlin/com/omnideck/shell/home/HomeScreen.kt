@@ -53,7 +53,7 @@ fun HomeScreen(
                 title = { Text("OmniDeck") },
                 actions = {
                     // The only way to reach a module that is not in the base APK
-                    // (OD-303): an on-demand module has no tile until something asks
+                    // (OD-305): an on-demand module has no tile until something asks
                     // Play for it.
                     IconButton(onClick = onCatalog) {
                         Icon(Icons.Default.Widgets, contentDescription = "Modules")

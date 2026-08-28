@@ -38,7 +38,7 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * The acquisition surface of on-demand delivery (OD-303).
+ * The acquisition surface of on-demand delivery (OD-305).
  *
  * Two things here are load-bearing. An install that stops at "downloaded" leaves a
  * module inert, which looks to a user exactly like an install that failed; and a
