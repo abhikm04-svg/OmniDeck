@@ -38,6 +38,14 @@ import org.robolectric.annotation.GraphicsMode
  * phase every run. The previous arrangement could not have been stable even if it had
  * completed: whatever arc happened to be on screen became the baseline.
  *
+ * This file lives in `src/testDebug` rather than `src/test` because a Compose rule
+ * launches a `ComponentActivity`, and the manifest declaring one comes from
+ * `compose-ui-test-manifest` — a `debugImplementation`. In the release variant the
+ * activity is simply not there and Robolectric fails with "Unable to resolve
+ * activity". Shipping the test manifest into release to satisfy a test would be the
+ * wrong trade, and these captures only ever run against `recordRoborazziDebug` /
+ * `verifyRoborazziDebug` anyway, so the debug source set is where they belong.
+ *
  * Capture is by [android.view.View] rather than the composable overload, since that
  * overload is the one that goes through Espresso. That makes the window itself the
  * frame, which is why the qualifiers below are the subject's size rather than the
