@@ -1,18 +1,39 @@
-# `sites/` — the public web origin
+# The public web origin — `sites/`
 
-Static pages that have to be reachable **without the app installed**: the privacy policy
-Play requires as a listing URL, the account-deletion page the internal baseline commits to
-at `/delete-account`, and the terms of service. This directory is OD-716.
+Runbook for `sites/`: the static pages that have to be reachable **without the app
+installed**. The privacy policy Play requires as a listing URL, the account-deletion page
+the internal baseline commits to at `/delete-account`, and the terms of service. OD-716.
 
-Nothing here is part of the Gradle build. No convention plugin sees it, `settings.gradle.kts`
-only discovers projects under `modules/`, and the quality gates that run in CI are Kotlin and
-Android tools. The one gate that does reach these files is Spotless's `misc` format, which
-holds `**/*.md` to no trailing whitespace and a final newline.
+Live at `https://omnideck-sites.pages.dev` since 2026-08-29.
+
+## Why this file is not in `sites/`
+
+**Everything in `sites/` is published, whether or not it is a page.** Cloudflare Pages
+serves the deployed directory as-is; there is no notion of a file that is present but
+private. This runbook shipped inside `sites/` for one deploy and was readable at
+`/README.md` — a document naming ticket numbers, ADR-011 and the domain strategy, on the
+same origin we hand to Play.
+
+So the directory holds only what is meant to be public, and this lives outside it. That
+invariant is worth keeping: it fails safe when someone adds a file without thinking about
+who can read it, which a routing rule hiding one filename would not.
+
+The exceptions are Cloudflare's own control files. `_headers`, `_redirects`, `_routes.json`
+and `_worker.js` are read as configuration and never served — verified: `/_headers` returns
+404 while `/robots.txt` returns 200. Nothing else gets that treatment, underscore prefix or
+not.
+
+## Not part of the Gradle build
+
+No convention plugin sees `sites/`, `settings.gradle.kts` only discovers projects under
+`modules/`, and the quality gates that run in CI are Kotlin and Android tools. The one gate
+that reaches any of this is Spotless's `misc` format, which holds `**/*.md` — this file
+included — to no trailing whitespace and a final newline.
 
 ## Deploying it
 
-One Cloudflare Pages project, connected to this repository, serving this directory as the
-site root. There is no build step: the files are served as they are.
+One Cloudflare Pages project, connected to this repository, serving `sites/` as the site
+root. There is no build step: the files are served as they are.
 
 | Setting | Value |
 |---|---|
@@ -27,17 +48,21 @@ of the repository is neither built nor deployed, and it leaves room for a second
 (a marketing site, hosted docs) pointed at a sibling directory later without disturbing this
 one. Cloudflare supports several projects from one repository, each with its own root.
 
-Because the root directory *is* the site root, paths here map to URLs directly:
+Because the root directory *is* the site root, paths under `sites/` map to URLs directly:
 
 | File | URL |
 |---|---|
-| `index.html` | `/` |
-| `privacy/index.html` | `/privacy/` |
-| `delete-account/index.html` | `/delete-account/` |
-| `terms/index.html` | `/terms/` |
-| `404.html` | served for anything unmatched |
-| `_headers` | response headers, not a served file |
-| `robots.txt` | `/robots.txt` |
+| `sites/index.html` | `/` |
+| `sites/privacy/index.html` | `/privacy/` |
+| `sites/delete-account/index.html` | `/delete-account/` |
+| `sites/terms/index.html` | `/terms/` |
+| `sites/assets/style.css` | `/assets/style.css` |
+| `sites/404.html` | served for anything unmatched |
+| `sites/robots.txt` | `/robots.txt` |
+| `sites/_headers` | response headers; the file itself 404s |
+
+A path without its trailing slash redirects: `/delete-account` returns 308 to
+`/delete-account/`. Both forms are safe to hand to Play.
 
 Preview deployments are worth turning off (Settings → Builds & deployments → Preview
 deployments → None) until the pages clear legal review. They are public URLs, and every
@@ -88,6 +113,25 @@ references too.
 
 `scripts/assetlinks.py verify` runs against any host, so the App Link flow can be rehearsed
 here without publishing a single shareable `/go/` URL.
+
+## Checking a deploy
+
+Pages rebuilds on every push to `main`. What is worth re-checking after a change to
+`sites/` — the last line is the one that matters, and the reason this runbook moved:
+
+```bash
+B=https://omnideck-sites.pages.dev
+for p in / /privacy/ /delete-account/ /terms/ /robots.txt /nope \
+         /.well-known/assetlinks.json /README.md; do
+  printf '%-32s %s\n' "$p" "$(curl -sS -o /dev/null -w '%{http_code}' "$B$p")"
+done
+curl -sSI "$B/privacy/" | grep -i content-security-policy
+```
+
+Expected: 200 for the four pages and `robots.txt`, **404** for `/nope`,
+`/.well-known/assetlinks.json` and `/README.md`, and the CSP header present. An
+`assetlinks.json` that starts answering 200 means someone published App Links under a
+throwaway origin — see below.
 
 ## When the permanent domain arrives
 
