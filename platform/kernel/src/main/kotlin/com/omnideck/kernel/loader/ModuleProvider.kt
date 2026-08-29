@@ -31,6 +31,17 @@ interface ModuleProvider {
 
     suspend fun uninstall(id: ModuleId)
 
+    /**
+     * Abandons an install in progress, if this delivery kind has one to abandon
+     * (OD-302).
+     *
+     * Defaulted to nothing because most kinds genuinely have nothing to cancel: a
+     * bundled module is already on the device, and a web surface has no acquisition
+     * step. Only a download running in another process — Play's — can outlive the
+     * caller's interest in it, and that is the case this exists for.
+     */
+    fun cancelInstall(id: ModuleId) = Unit
+
     /** Instantiates the module's entry point. Called only when [isInstalled] is true. */
     suspend fun load(descriptor: ModuleDescriptor): OmniModule
 }

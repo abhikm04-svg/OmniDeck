@@ -2,6 +2,7 @@ package com.omnideck.shell.navigation
 
 import com.omnideck.kernel.router.MutableDestinationRegistry
 import com.omnideck.sdk.ModuleId
+import com.omnideck.shell.catalog.CatalogDetailRoute
 import com.omnideck.shell.catalog.CatalogRoute
 import com.omnideck.shell.privacy.PrivacyCentreRoute
 import com.omnideck.shell.settings.SettingsRoute
@@ -33,6 +34,9 @@ class ShellDestinations @Inject constructor() {
         shell.destination(ShellRoutes.SETTINGS) { SettingsRoute() }
         shell.destination(ShellRoutes.PRIVACY) { PrivacyCentreRoute() }
         shell.destination(ShellRoutes.CATALOG) { CatalogRoute() }
+        shell.destination(ShellRoutes.CATALOG_DETAIL_PATTERN) { args ->
+            CatalogDetailRoute(ModuleId(args.string("moduleId")))
+        }
         shell.destination(ShellRoutes.MODULE_STATUS_PATTERN) { args ->
             ModuleStatusRoute(ModuleId(args.string("moduleId")))
         }

@@ -37,6 +37,7 @@ class FeatureSplitProviderTest {
         val installRequests = mutableListOf<String>()
         val uninstallRequests = mutableListOf<String>()
         val confirmationRequests = mutableListOf<Int>()
+        val cancelRequests = mutableListOf<Int>()
 
         override fun installedSplits(): Set<String> = installed
 
@@ -47,6 +48,10 @@ class FeatureSplitProviderTest {
 
         override fun deferredUninstall(splitName: String) {
             uninstallRequests += splitName
+        }
+
+        override fun cancelInstall(sessionId: Int) {
+            cancelRequests += sessionId
         }
 
         override suspend fun requestUserConfirmation(sessionId: Int): Boolean {
@@ -137,6 +142,48 @@ class FeatureSplitProviderTest {
         provider(installer).install(notes).toList()
 
         assertThat(installer.confirmationRequests).containsExactly(7)
+    }
+
+    // -- cancellation (OD-302) ----------------------------------------------
+
+    @Test
+    fun `cancelling asks Play to stop the session the module is actually using`() = runTest {
+        // Cancelling the collecting coroutine would only stop *this* process
+        // listening; Play keeps downloading in its own, spending the user's data
+        // after they pressed Cancel. So it has to be cancelled by session id.
+        val installer = FakeSplitInstaller(
+            updates = flowOf(SplitSessionUpdate(SplitStatus.DOWNLOADING, sessionId = 42)),
+        )
+        val provider = provider(installer)
+
+        provider.install(notes).collect { provider.cancelInstall(notes) }
+
+        assertThat(installer.cancelRequests).containsExactly(42)
+    }
+
+    @Test
+    fun `cancelling a finished install asks Play nothing`() = runTest {
+        // Session ids are reused. A Cancel arriving after the install completed must
+        // not reach whichever session now holds that id — it would abort a download
+        // the user did ask for.
+        val installer = FakeSplitInstaller(
+            updates = flowOf(SplitSessionUpdate(SplitStatus.INSTALLED, sessionId = 42)),
+        )
+        val provider = provider(installer)
+
+        provider.install(notes).toList()
+        provider.cancelInstall(notes)
+
+        assertThat(installer.cancelRequests).isEmpty()
+    }
+
+    @Test
+    fun `cancelling a module that was never installing asks Play nothing`() = runTest {
+        val installer = FakeSplitInstaller()
+
+        provider(installer).cancelInstall(notes)
+
+        assertThat(installer.cancelRequests).isEmpty()
     }
 
     @Test

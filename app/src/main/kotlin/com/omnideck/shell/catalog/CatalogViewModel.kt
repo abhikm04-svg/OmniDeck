@@ -4,14 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.omnideck.kernel.lifecycle.ModuleLifecycleManager
 import com.omnideck.kernel.lifecycle.ModuleRuntime
+import com.omnideck.sdk.DataCategory
 import com.omnideck.sdk.DeliveryKind
+import com.omnideck.sdk.EntitlementPolicy
+import com.omnideck.sdk.ModuleCategory
 import com.omnideck.sdk.ModuleId
 import com.omnideck.sdk.ModuleState
 import com.omnideck.sdk.PurgeScope
+import com.omnideck.sdk.SemVer
 import com.omnideck.sdk.capability.TelemetryService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -34,6 +40,15 @@ data class CatalogEntry(
     /** Zero means "not known yet" — see [CatalogEntry.detailsAreProvisional]. */
     val downloadBytes: Long,
     val reason: String?,
+    /** Null until the module's own manifest has been read. */
+    val category: ModuleCategory? = null,
+    val version: SemVer? = null,
+    val owner: String? = null,
+    val supportsOffline: Boolean = false,
+    /** Runtime permissions the module may ask for, requested contextually, never at start. */
+    val androidPermissions: Set<String> = emptySet(),
+    val dataCategories: Set<DataCategory> = emptySet(),
+    val entitlement: EntitlementPolicy? = null,
 ) {
     /** Nothing to download and nothing to reclaim: it is inside the base APK. */
     val isBundled: Boolean get() = delivery == DeliveryKind.BUNDLED
@@ -54,6 +69,43 @@ data class CatalogEntry(
         get() = state == ModuleState.INSTALLING ||
             state == ModuleState.INITIALIZING ||
             state == ModuleState.PURGING
+
+    /**
+     * True only while there is a Play session that could still be abandoned.
+     *
+     * Deliberately narrower than [isBusy]: initialising runs in this process and
+     * finishes in milliseconds, and purging must not be interruptible half-way
+     * through erasing a module's data.
+     */
+    val isCancellable: Boolean get() = state == ModuleState.INSTALLING && !isBundled
+
+    /** Matched against the fields a user can actually see. */
+    fun matches(query: String): Boolean {
+        if (query.isBlank()) return true
+        val needle = query.trim()
+        return title.contains(needle, ignoreCase = true) ||
+            summary.contains(needle, ignoreCase = true) ||
+            id.value.contains(needle, ignoreCase = true)
+    }
+}
+
+/**
+ * What the Catalog screen renders (OD-305).
+ *
+ * [categories] holds only the categories actually present in this build, so the
+ * filter row never offers a chip that would empty the list — and, as everywhere else
+ * in the Shell, it is derived from what was discovered rather than from a hardcoded
+ * set of the categories someone expected to exist.
+ */
+data class CatalogUiState(
+    val entries: List<CatalogEntry> = emptyList(),
+    val categories: List<ModuleCategory> = emptyList(),
+    val query: String = "",
+    val selectedCategory: ModuleCategory? = null,
+    /** Before filtering — the difference is how "no results" is told apart from "no modules". */
+    val totalCount: Int = 0,
+) {
+    val isFiltered: Boolean get() = query.isNotBlank() || selectedCategory != null
 }
 
 /**
@@ -70,15 +122,39 @@ class CatalogViewModel @Inject constructor(
     private val telemetry: TelemetryService,
 ) : ViewModel() {
 
+    private val query = MutableStateFlow("")
+    private val selectedCategory = MutableStateFlow<ModuleCategory?>(null)
+
     /**
-     * Seeded from the current state rather than from an empty list, and shared
-     * eagerly: the upstream is a `map` over an in-memory `StateFlow`, so there is
-     * nothing to be lazy about, and a `WhileSubscribed` start would render one frame
-     * of "Nothing to show" over a Catalog that was already fully known.
+     * Every discovered module, unfiltered. The detail screen reads from here rather
+     * than from [state], so a module stays addressable by URI when the list happens
+     * to be filtered to something else — a deep link into the Catalog must not depend
+     * on what the user last typed.
      */
     val entries: StateFlow<List<CatalogEntry>> = lifecycle.modules
         .map(::toEntries)
         .stateIn(viewModelScope, SharingStarted.Eagerly, toEntries(lifecycle.modules.value))
+
+    /**
+     * Shared eagerly: the upstream is a `map` over an in-memory `StateFlow`, so there
+     * is nothing to be lazy about, and a `WhileSubscribed` start would render one
+     * frame of "Nothing to show" over a Catalog that was already fully known.
+     */
+    val state: StateFlow<CatalogUiState> =
+        combine(entries, query, selectedCategory, ::toUiState)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                toUiState(entries.value, query.value, selectedCategory.value),
+            )
+
+    fun onQueryChange(value: String) {
+        query.value = value
+    }
+
+    fun onCategorySelected(category: ModuleCategory?) {
+        selectedCategory.value = category
+    }
 
     /**
      * Downloads a module and brings it up.
@@ -99,6 +175,19 @@ class CatalogViewModel @Inject constructor(
     }
 
     /**
+     * Abandons a download in progress (OD-302).
+     *
+     * Not implemented by cancelling the coroutine started above: that would stop this
+     * process listening while Play carried on downloading in its own, which on a
+     * metered connection is the user's data being spent after they pressed Cancel.
+     * The lifecycle manager reaches the session itself.
+     */
+    fun onCancel(id: ModuleId) = viewModelScope.launch {
+        telemetry.event("catalog_install_cancelled", mapOf("module.id" to id.value))
+        lifecycle.cancelInstall(id)
+    }
+
+    /**
      * Removes a module and everything it stored (OD-307).
      *
      * `PurgeScope.ALL` rather than a bare uninstall: leaving a module's database
@@ -111,6 +200,16 @@ class CatalogViewModel @Inject constructor(
         telemetry.event("catalog_module_removed", mapOf("module.id" to id.value))
         lifecycle.purge(id, PurgeScope.ALL)
     }
+
+    private fun toUiState(all: List<CatalogEntry>, query: String, category: ModuleCategory?) = CatalogUiState(
+        entries = all.filter { it.matches(query) && (category == null || it.category == category) },
+        // Sorted by the enum's own order so the chip row does not reshuffle as
+        // modules are installed and their categories become known.
+        categories = all.mapNotNull { it.category }.distinct().sorted(),
+        query = query,
+        selectedCategory = category,
+        totalCount = all.size,
+    )
 
     private fun toEntries(runtimes: Map<ModuleId, ModuleRuntime>): List<CatalogEntry> =
         runtimes.values.map(::toEntry).sortedBy { it.title.lowercase() }
@@ -127,6 +226,13 @@ class CatalogViewModel @Inject constructor(
             installProgress = runtime.installProgress,
             downloadBytes = manifest?.estimatedDownloadBytes ?: 0L,
             reason = runtime.reason,
+            category = manifest?.category,
+            version = manifest?.version,
+            owner = manifest?.owner?.value,
+            supportsOffline = manifest?.supportsOffline ?: false,
+            androidPermissions = manifest?.androidPermissions.orEmpty(),
+            dataCategories = manifest?.dataCategories.orEmpty(),
+            entitlement = manifest?.entitlement,
         )
     }
 }

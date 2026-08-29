@@ -27,6 +27,15 @@ object ShellRoutes {
     /** Acquire and remove modules (OD-305). */
     const val CATALOG = "omnideck://shell/catalog"
 
+    /**
+     * One module's size, permissions and data disclosure (OD-305).
+     *
+     * A distinct pattern rather than a query parameter on [CATALOG], so it is
+     * linkable on its own — a "what does this module ask for?" link in a
+     * notification or a support article resolves to exactly this page.
+     */
+    const val CATALOG_DETAIL_PATTERN = "omnideck://shell/catalog/{moduleId}"
+
     /** Status and recovery for one module: quarantined, gated, failed to install. */
     const val MODULE_STATUS_PATTERN = "omnideck://shell/module/{moduleId}"
 
@@ -35,6 +44,8 @@ object ShellRoutes {
     fun privacy(): Route = Route(PRIVACY)
 
     fun catalog(): Route = Route(CATALOG)
+
+    fun catalogDetail(id: ModuleId): Route = Route("omnideck://shell/catalog/${id.value}")
 
     fun moduleStatus(id: ModuleId): Route = Route("omnideck://shell/module/${id.value}")
 }

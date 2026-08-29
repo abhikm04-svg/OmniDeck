@@ -25,6 +25,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.registerInstanceFactory
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -129,6 +130,91 @@ class CatalogViewModelTest {
         coVerify(exactly = 0) { lifecycle.activate(any()) }
     }
 
+    // -- cancellation (OD-302) ----------------------------------------------
+
+    @Test
+    fun `cancelling reaches the install session rather than dropping the collector`() = runTest {
+        // Abandoning the coroutine would stop this process listening while Play kept
+        // downloading in its own — the user's data, spent after they pressed Cancel.
+        runtimes.value = mapOf(id("alpha") to runtime("alpha", ModuleState.INSTALLING))
+
+        viewModel().onCancel(id("alpha"))
+
+        verify { lifecycle.cancelInstall(id("alpha")) }
+    }
+
+    @Test
+    fun `only an on-demand download in flight offers a cancel`() = runTest {
+        // Initialising runs in this process and is over in milliseconds; purging must
+        // not be interruptible half-way through erasing a module's data.
+        runtimes.value = mapOf(
+            id("alpha") to runtime("alpha", ModuleState.INSTALLING, DeliveryKind.FEATURE_SPLIT),
+            id("bravo") to runtime("bravo", ModuleState.INITIALIZING, DeliveryKind.FEATURE_SPLIT),
+            id("charlie") to runtime("charlie", ModuleState.PURGING, DeliveryKind.FEATURE_SPLIT),
+            id("delta") to runtime("delta", ModuleState.INSTALLING, DeliveryKind.BUNDLED),
+        )
+
+        val cancellable = viewModel().entries.value.filter { it.isCancellable }
+
+        assertThat(cancellable.map { it.title }).containsExactly("Alpha")
+    }
+
+    // -- search and categories (OD-305) -------------------------------------
+
+    @Test
+    fun `search matches the id as well as the name, because that is all an uninstalled module has`() = runTest {
+        runtimes.value = mapOf(
+            id("alpha") to runtime("alpha", ModuleState.ACTIVE),
+            id("zebra") to runtime("zebra", ModuleState.ADVERTISED, manifest = null),
+        )
+        val viewModel = viewModel()
+
+        viewModel.onQueryChange("zeb")
+
+        assertThat(viewModel.state.value.entries.map { it.id }).containsExactly(id("zebra"))
+    }
+
+    @Test
+    fun `the category filter offers only categories this build actually has`() = runTest {
+        // Offering the whole enum would put chips in front of the user that empty the
+        // list, and would mean the Shell knew a fixed set of module categories.
+        runtimes.value = mapOf(
+            id("alpha") to runtime("alpha", ModuleState.ACTIVE, category = ModuleCategory.FINANCE),
+            id("bravo") to runtime("bravo", ModuleState.ACTIVE, category = ModuleCategory.FINANCE),
+        )
+
+        assertThat(viewModel().state.value.categories).containsExactly(ModuleCategory.FINANCE)
+    }
+
+    @Test
+    fun `filtering narrows the list without losing the module the detail page addresses`() = runTest {
+        // The detail screen reads `entries`, not `state`: a deep link to a module must
+        // not depend on what the user last typed into the search box.
+        runtimes.value = mapOf(
+            id("alpha") to runtime("alpha", ModuleState.ACTIVE, category = ModuleCategory.FINANCE),
+            id("zebra") to runtime("zebra", ModuleState.ACTIVE, category = ModuleCategory.MEDIA),
+        )
+        val viewModel = viewModel()
+
+        viewModel.onCategorySelected(ModuleCategory.MEDIA)
+
+        assertThat(viewModel.state.value.entries.map { it.id }).containsExactly(id("zebra"))
+        assertThat(viewModel.entries.value).hasSize(2)
+    }
+
+    @Test
+    fun `an empty result from a filter is not reported as an empty build`() = runTest {
+        runtimes.value = mapOf(id("alpha") to runtime("alpha", ModuleState.ACTIVE))
+        val viewModel = viewModel()
+
+        viewModel.onQueryChange("nothing matches this")
+
+        val state = viewModel.state.value
+        assertThat(state.entries).isEmpty()
+        assertThat(state.isFiltered).isTrue()
+        assertThat(state.totalCount).isEqualTo(1)
+    }
+
     @Test
     fun `removing a module erases its data, not only its download`() = runTest {
         // Play's uninstall is deferred and reclaims space whenever it likes. If that
@@ -161,7 +247,8 @@ class CatalogViewModelTest {
         shortId: String,
         state: ModuleState,
         delivery: DeliveryKind = DeliveryKind.BUNDLED,
-        manifest: ModuleManifest? = manifest(shortId),
+        category: ModuleCategory = ModuleCategory.PRODUCTIVITY,
+        manifest: ModuleManifest? = manifest(shortId, category),
     ) = ModuleRuntime(
         descriptor = ModuleDescriptor(
             id = id(shortId),
@@ -172,12 +259,12 @@ class CatalogViewModelTest {
         manifest = manifest,
     )
 
-    private fun manifest(shortId: String) = ModuleManifest(
+    private fun manifest(shortId: String, category: ModuleCategory = ModuleCategory.PRODUCTIVITY) = ModuleManifest(
         id = id(shortId),
         version = SemVer(1, 0, 0),
         displayName = LocalizedString(shortId.replaceFirstChar(Char::titlecase)),
         summary = LocalizedString("A module"),
-        category = ModuleCategory.PRODUCTIVITY,
+        category = category,
         icon = IconRef.Symbol("widgets"),
         delivery = DeliveryKind.BUNDLED,
         sdkRange = SemVerRange(SemVer(1, 0, 0), SemVer(2, 0, 0)),

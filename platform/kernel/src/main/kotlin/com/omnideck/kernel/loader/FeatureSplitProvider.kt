@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Play Feature Delivery — the primary delivery channel (ADR-001).
@@ -40,6 +41,17 @@ class FeatureSplitProvider(
 
     override val handles = DeliveryKind.FEATURE_SPLIT
 
+    /**
+     * Play's session id per module while an install is running (OD-302).
+     *
+     * Cancellation arrives from the UI as a [ModuleId] — the user pressed Cancel on a
+     * row — while Play only cancels by session id, and that id exists nowhere but the
+     * update stream. Entries are removed on the terminal update, so a later Cancel on
+     * a finished install asks Play nothing rather than cancelling whatever session
+     * happens to hold that id next.
+     */
+    private val liveSessions = ConcurrentHashMap<ModuleId, Int>()
+
     override fun isInstalled(id: ModuleId): Boolean = id.splitName in installer.installedSplits()
 
     override fun install(id: ModuleId): Flow<InstallProgress> {
@@ -47,14 +59,26 @@ class FeatureSplitProvider(
         if (isInstalled(id)) return flowOf(InstallProgress.Installed)
 
         return flow {
-            installer.install(id.splitName).collect { update ->
-                val progress = toProgress(update) ?: return@collect
-                emit(progress)
-                if (progress is InstallProgress.RequiresUserConfirmation) {
-                    confirm(update.sessionId)
+            try {
+                installer.install(id.splitName).collect { update ->
+                    if (update.status.isTerminal) liveSessions.remove(id) else liveSessions[id] = update.sessionId
+
+                    val progress = toProgress(update) ?: return@collect
+                    emit(progress)
+                    if (progress is InstallProgress.RequiresUserConfirmation) {
+                        confirm(update.sessionId)
+                    }
                 }
+            } finally {
+                // Also on cancellation of the collector: a stale id here would send a
+                // later Cancel to a session this module no longer owns.
+                liveSessions.remove(id)
             }
         }
+    }
+
+    override fun cancelInstall(id: ModuleId) {
+        liveSessions[id]?.let(installer::cancelInstall)
     }
 
     /**

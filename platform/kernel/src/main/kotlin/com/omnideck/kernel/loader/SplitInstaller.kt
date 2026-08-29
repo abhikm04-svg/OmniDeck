@@ -39,6 +39,20 @@ interface SplitInstaller {
     fun deferredUninstall(splitName: String)
 
     /**
+     * Asks Play to abandon a running session (OD-302).
+     *
+     * Cancelling the coroutine that collects [install] is not this: it stops *this
+     * process* listening, while Play carries on downloading in its own. On a metered
+     * connection that is the user's data being spent after they pressed Cancel, so
+     * the session has to be cancelled where it actually runs.
+     *
+     * Best-effort by nature — a session that already finished cannot be recalled, and
+     * Play answers by emitting [SplitStatus.CANCELED] or not at all, never by failing
+     * here.
+     */
+    fun cancelInstall(sessionId: Int)
+
+    /**
      * Shows Play's consent dialog for a session waiting on it (OD-302).
      *
      * Play holds a large or metered download in
@@ -162,6 +176,13 @@ class PlaySplitInstaller(private val manager: SplitInstallManager, private val c
 
     override fun deferredUninstall(splitName: String) {
         manager.deferredUninstall(listOf(splitName))
+    }
+
+    override fun cancelInstall(sessionId: Int) {
+        // No failure listener: Play rejects the cancellation of a session that has
+        // already finished, which is not a condition the caller can act on and not
+        // one worth surfacing — the install they wanted stopped is already stopped.
+        manager.cancelInstall(sessionId)
     }
 
     /**

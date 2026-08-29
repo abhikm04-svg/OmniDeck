@@ -205,6 +205,14 @@ jobs:
           OMNIDECK_DYNAMIC_MODULES: ${{ steps.modules.outputs.list }}
         run: ./gradlew :app:bundleRelease "-Pomnideck.dynamicModules=$OMNIDECK_DYNAMIC_MODULES" --stacktrace
 
+      # OD-312. Checked here rather than in the main build because this job is the
+      # only one that produces a bundle in the shape that ships — every module a
+      # split, which is what the per-split budget is about. §16's budgets only work
+      # if they start at zero, and this one does.
+      - name: App size budgets
+        if: steps.modules.outputs.list != ''
+        run: python3 scripts/check-app-size.py
+
       # The fitness tests have to mean something in this mode too: the registry now
       # covers no module, the descriptors still cover all of them, and no Shell source
       # may name one. Layering is re-checked because a split's dependency on the base

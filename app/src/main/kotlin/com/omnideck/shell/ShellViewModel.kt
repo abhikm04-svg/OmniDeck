@@ -104,6 +104,9 @@ class ShellViewModel @Inject constructor(
     /** The Catalog (OD-305) — install and remove modules. */
     fun onCatalog() = viewModelScope.launch { navigate(ShellRoutes.catalog()) }
 
+    /** One module's size, permissions and data disclosure (OD-305). */
+    fun onCatalogDetail(id: ModuleId) = viewModelScope.launch { navigate(ShellRoutes.catalogDetail(id)) }
+
     /**
      * Why a module is unusable, and what can be done about it (OD-208).
      *
