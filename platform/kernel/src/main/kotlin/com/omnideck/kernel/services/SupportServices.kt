@@ -3,6 +3,7 @@ package com.omnideck.kernel.services
 import android.app.NotificationChannel
 import android.app.NotificationChannelGroup
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -10,6 +11,7 @@ import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
+import androidx.core.net.toUri
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -19,6 +21,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import com.omnideck.sdk.ModuleId
+import com.omnideck.sdk.Route
 import com.omnideck.sdk.capability.FeatureFlagService
 import com.omnideck.sdk.capability.MediaService
 import com.omnideck.sdk.capability.NotificationService
@@ -99,6 +102,7 @@ class NotificationServiceImpl(
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(spec.ongoing)
             .setAutoCancel(!spec.ongoing)
+            .setContentIntent(spec.route?.let(::tapTarget))
             .build()
 
         return runCatching { manager.notify(scopedId(spec.id), notification) }.isSuccess
@@ -122,6 +126,37 @@ class NotificationServiceImpl(
     ) == PermissionBroker.PermissionResult.GRANTED
 
     override fun areNotificationsEnabled(): Boolean = manager.areNotificationsEnabled()
+
+    /**
+     * Where a notification tap goes (OD-314).
+     *
+     * An **implicit** intent on the `omnideck://` scheme, not a reference to the
+     * Shell's Activity: the kernel must not know that class exists (ADR-003), and
+     * the Shell already declares the filter that catches this. `setPackage` keeps it
+     * inside this app, so another app that declared the same scheme cannot be handed
+     * the tap.
+     *
+     * Immutable because it must be: from API 31 a mutable `PendingIntent` without an
+     * explicit component is rejected outright, and there is nothing here for a
+     * recipient to need to fill in.
+     *
+     * The request code is derived from the route so that two notifications pointing
+     * at different places do not collide onto one `PendingIntent` — the default
+     * behaviour otherwise, and the reason "the wrong notification opens the wrong
+     * screen" is such a common bug.
+     */
+    private fun tapTarget(route: Route): PendingIntent? {
+        val intent = Intent(Intent.ACTION_VIEW, route.uri.toUri())
+            .setPackage(context.packageName)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+
+        return PendingIntent.getActivity(
+            context,
+            scopedId(route.uri.hashCode()),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
 
     private fun ensureChannel(channelId: String, importance: NotificationService.Importance) {
         val nm = context.getSystemService<NotificationManager>() ?: return

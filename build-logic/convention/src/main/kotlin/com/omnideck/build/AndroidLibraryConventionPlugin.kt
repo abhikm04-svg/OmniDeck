@@ -8,9 +8,25 @@ import org.gradle.kotlin.dsl.configure
 /**
  * `omnideck.android.library` — the baseline for every Android library in the repo
  * (platform services, design system, testing harness).
+ *
+ * It is also where a feature module's delivery mechanism is decided (OD-301). A
+ * module listed in `omnideck.dynamicModules` is handed to
+ * `omnideck.android.feature` instead, so turning Notes into an on-demand Play split
+ * is `-Pomnideck.dynamicModules=notes` and nothing else — no edit to the module's
+ * build file, none to the Shell's. That equivalence is ADR-001's central claim, and
+ * making the switch a property is what lets CI prove it on every run rather than
+ * leaving it as an assertion in a document.
  */
 class AndroidLibraryConventionPlugin : Plugin<Project> {
-    override fun apply(target: Project): Unit = with(target) {
+    override fun apply(target: Project) {
+        if (target.isOnDemandModule()) {
+            target.pluginManager.apply("omnideck.android.feature")
+            return
+        }
+        applyLibrary(target)
+    }
+
+    private fun applyLibrary(target: Project): Unit = with(target) {
         pluginManager.apply("com.android.library")
         pluginManager.apply("org.jetbrains.kotlin.android")
         pluginManager.apply("omnideck.quality")

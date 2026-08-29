@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +37,7 @@ import com.omnideck.shell.ModuleTileModel
 fun HomeScreen(
     modules: List<ModuleTileModel>,
     onModuleClick: (ModuleId) -> Unit,
+    onCatalog: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -50,6 +52,12 @@ fun HomeScreen(
             LargeTopAppBar(
                 title = { Text("OmniDeck") },
                 actions = {
+                    // The only way to reach a module that is not in the base APK
+                    // (OD-305): an on-demand module has no tile until something asks
+                    // Play for it.
+                    IconButton(onClick = onCatalog) {
+                        Icon(Icons.Default.Widgets, contentDescription = "Modules")
+                    }
                     IconButton(onClick = onSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
@@ -62,6 +70,8 @@ fun HomeScreen(
                 title = "No modules yet",
                 message = "Create a directory under modules/ with a build.gradle.kts and a " +
                     "ModuleEntryPoint, then rebuild. It will appear here automatically.",
+                actionLabel = "Browse modules",
+                onAction = onCatalog,
                 modifier = Modifier.fillMaxSize(),
             )
             return@Scaffold

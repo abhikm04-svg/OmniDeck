@@ -1,5 +1,6 @@
 package com.omnideck.kernel.loader
 
+import android.content.IntentSender
 import com.google.android.play.core.splitinstall.SplitInstallManager
 import com.google.android.play.core.splitinstall.SplitInstallRequest
 import com.google.android.play.core.splitinstall.SplitInstallSessionState
@@ -8,6 +9,7 @@ import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A narrow seam over Play Feature Delivery.
@@ -35,6 +37,48 @@ interface SplitInstaller {
      * opportunistically, so nothing may promise the user immediate space savings.
      */
     fun deferredUninstall(splitName: String)
+
+    /**
+     * Asks Play to abandon a running session (OD-302).
+     *
+     * Cancelling the coroutine that collects [install] is not this: it stops *this
+     * process* listening, while Play carries on downloading in its own. On a metered
+     * connection that is the user's data being spent after they pressed Cancel, so
+     * the session has to be cancelled where it actually runs.
+     *
+     * Best-effort by nature — a session that already finished cannot be recalled, and
+     * Play answers by emitting [SplitStatus.CANCELED] or not at all, never by failing
+     * here.
+     */
+    fun cancelInstall(sessionId: Int)
+
+    /**
+     * Shows Play's consent dialog for a session waiting on it (OD-302).
+     *
+     * Play holds a large or metered download in
+     * [SplitStatus.REQUIRES_USER_CONFIRMATION] until this dialog is answered — it
+     * does not time out, retry or fail. Reporting the state to the UI without asking
+     * is therefore not "surfacing" it; it is the 0% stall with a nicer label.
+     *
+     * Returns false when there is nothing to show — an unknown session, a session
+     * Play gave no resolution intent for, or no UI attached to show it from. The
+     * caller must treat that as a dead install rather than keep waiting, because
+     * nothing further will arrive on the session.
+     */
+    suspend fun requestUserConfirmation(sessionId: Int): Boolean
+}
+
+/**
+ * Launches an OS-owned consent dialog on the kernel's behalf.
+ *
+ * Implemented by the Shell's single Activity, which owns the ActivityResult
+ * plumbing; the kernel holds no Activity reference (ADR-003), and Play's dialog is
+ * an `IntentSender` the system renders, so this seam carries no Play type and no
+ * Android UI type beyond it.
+ */
+fun interface ConfirmationLauncher {
+    /** True if the dialog was shown and the user accepted. */
+    suspend fun launch(intentSender: IntentSender): Boolean
 }
 
 /** Delivery-agnostic view of one session update. */
@@ -44,6 +88,12 @@ data class SplitSessionUpdate(
     val totalBytes: Long = 0,
     /** Play's `SplitInstallErrorCode`, meaningful only when [status] is [SplitStatus.FAILED]. */
     val errorCode: Int = 0,
+    /**
+     * Play's session id. Needed to answer the confirmation prompt on the *right*
+     * session: a listener sees every session in the process, and consenting to the
+     * wrong one authorises a download the user never asked for.
+     */
+    val sessionId: Int = 0,
 )
 
 enum class SplitStatus {
@@ -65,7 +115,16 @@ enum class SplitStatus {
 }
 
 /** The real thing. Kept free of policy so there is little here to get wrong untested. */
-class PlaySplitInstaller(private val manager: SplitInstallManager) : SplitInstaller {
+class PlaySplitInstaller(private val manager: SplitInstallManager, private val confirmation: ConfirmationLauncher) :
+    SplitInstaller {
+
+    /**
+     * The latest state seen per session, because Play's consent dialog can only be
+     * launched from the session state that requested it and the listener is the only
+     * place that state exists. Entries are dropped as sessions reach a terminal
+     * status, so this cannot grow with the length of a user's session.
+     */
+    private val sessionStates = ConcurrentHashMap<Int, SplitInstallSessionState>()
 
     override fun installedSplits(): Set<String> = manager.installedModules
 
@@ -75,13 +134,24 @@ class PlaySplitInstaller(private val manager: SplitInstallManager) : SplitInstal
         var sessionId = UNASSIGNED_SESSION
 
         val listener = SplitInstallStateUpdatedListener { state: SplitInstallSessionState ->
+            // Recorded before the filter: requestUserConfirmation looks a session up
+            // by id, and a state dropped here is a consent prompt that can never be
+            // shown afterwards.
+            val status = state.status().toSplitStatus()
+            if (status.isTerminal) {
+                sessionStates.remove(state.sessionId())
+            } else {
+                sessionStates[state.sessionId()] = state
+            }
+
             if (state.sessionId() != sessionId) return@SplitInstallStateUpdatedListener
 
             val update = SplitSessionUpdate(
-                status = state.status().toSplitStatus(),
+                status = status,
                 bytesDownloaded = state.bytesDownloaded(),
                 totalBytes = state.totalBytesToDownload(),
                 errorCode = state.errorCode(),
+                sessionId = state.sessionId(),
             )
             trySend(update)
             if (update.status.isTerminal) close()
@@ -106,6 +176,28 @@ class PlaySplitInstaller(private val manager: SplitInstallManager) : SplitInstal
 
     override fun deferredUninstall(splitName: String) {
         manager.deferredUninstall(listOf(splitName))
+    }
+
+    override fun cancelInstall(sessionId: Int) {
+        // No failure listener: Play rejects the cancellation of a session that has
+        // already finished, which is not a condition the caller can act on and not
+        // one worth surfacing — the install they wanted stopped is already stopped.
+        manager.cancelInstall(sessionId)
+    }
+
+    /**
+     * Launches the resolution intent Play attached to the waiting session.
+     *
+     * This is what `startConfirmationDialogForResult` does internally. Going through
+     * the `IntentSender` directly is deliberate: it lets the Shell answer with an
+     * ActivityResult contract rather than the `onActivityResult` request-code path
+     * that overload requires, and it keeps this class the only file in the repo that
+     * knows Play's types.
+     */
+    @Suppress("DEPRECATION")
+    override suspend fun requestUserConfirmation(sessionId: Int): Boolean {
+        val intentSender = sessionStates[sessionId]?.resolutionIntent()?.intentSender ?: return false
+        return confirmation.launch(intentSender)
     }
 
     private fun Int.toSplitStatus(): SplitStatus = when (this) {

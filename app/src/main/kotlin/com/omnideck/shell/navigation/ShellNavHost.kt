@@ -81,6 +81,7 @@ fun ShellNavHost(onReady: () -> Unit, viewModel: ShellViewModel = hiltViewModel(
                 currentRoute == null -> HomeScreen(
                     modules = state.modules,
                     onModuleClick = viewModel::onModuleClicked,
+                    onCatalog = viewModel::onCatalog,
                     onSettings = viewModel::onSettings,
                 )
 

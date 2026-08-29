@@ -31,9 +31,13 @@ class FeatureSplitProviderTest {
     private class FakeSplitInstaller(
         private var installed: MutableSet<String> = mutableSetOf(),
         private val updates: Flow<SplitSessionUpdate> = flowOf(),
+        /** What Play's consent dialog would do. False = it could not be shown. */
+        private val confirmationShown: Boolean = true,
     ) : SplitInstaller {
         val installRequests = mutableListOf<String>()
         val uninstallRequests = mutableListOf<String>()
+        val confirmationRequests = mutableListOf<Int>()
+        val cancelRequests = mutableListOf<Int>()
 
         override fun installedSplits(): Set<String> = installed
 
@@ -44,6 +48,15 @@ class FeatureSplitProviderTest {
 
         override fun deferredUninstall(splitName: String) {
             uninstallRequests += splitName
+        }
+
+        override fun cancelInstall(sessionId: Int) {
+            cancelRequests += sessionId
+        }
+
+        override suspend fun requestUserConfirmation(sessionId: Int): Boolean {
+            confirmationRequests += sessionId
+            return confirmationShown
         }
 
         fun markInstalled(splitName: String) = installed.add(splitName)
@@ -114,6 +127,98 @@ class FeatureSplitProviderTest {
 
         assertThat(provider(installer).install(notes).toList())
             .containsExactly(InstallProgress.RequiresUserConfirmation)
+    }
+
+    @Test
+    fun `the consent dialog is actually asked for, on the session that wants it`() = runTest {
+        // Surfacing the state is not enough (OD-302): Play holds the session until the
+        // dialog is answered, and never times out. It is also asked for by session id,
+        // because consenting to the wrong session authorises a download nobody asked
+        // for — a listener sees every session in the process.
+        val installer = FakeSplitInstaller(
+            updates = flowOf(SplitSessionUpdate(SplitStatus.REQUIRES_USER_CONFIRMATION, sessionId = 7)),
+        )
+
+        provider(installer).install(notes).toList()
+
+        assertThat(installer.confirmationRequests).containsExactly(7)
+    }
+
+    // -- cancellation (OD-302) ----------------------------------------------
+
+    @Test
+    fun `cancelling asks Play to stop the session the module is actually using`() = runTest {
+        // Cancelling the collecting coroutine would only stop *this* process
+        // listening; Play keeps downloading in its own, spending the user's data
+        // after they pressed Cancel. So it has to be cancelled by session id.
+        val installer = FakeSplitInstaller(
+            updates = flowOf(SplitSessionUpdate(SplitStatus.DOWNLOADING, sessionId = 42)),
+        )
+        val provider = provider(installer)
+
+        provider.install(notes).collect { provider.cancelInstall(notes) }
+
+        assertThat(installer.cancelRequests).containsExactly(42)
+    }
+
+    @Test
+    fun `cancelling a finished install asks Play nothing`() = runTest {
+        // Session ids are reused. A Cancel arriving after the install completed must
+        // not reach whichever session now holds that id — it would abort a download
+        // the user did ask for.
+        val installer = FakeSplitInstaller(
+            updates = flowOf(SplitSessionUpdate(SplitStatus.INSTALLED, sessionId = 42)),
+        )
+        val provider = provider(installer)
+
+        provider.install(notes).toList()
+        provider.cancelInstall(notes)
+
+        assertThat(installer.cancelRequests).isEmpty()
+    }
+
+    @Test
+    fun `cancelling a module that was never installing asks Play nothing`() = runTest {
+        val installer = FakeSplitInstaller()
+
+        provider(installer).cancelInstall(notes)
+
+        assertThat(installer.cancelRequests).isEmpty()
+    }
+
+    @Test
+    fun `an install that cannot ask for consent fails instead of hanging`() = runTest {
+        // Play sends nothing more on a session whose dialog was never shown. Without a
+        // terminal progress here the Router's first() never returns, the tile stays at
+        // 0% and there is nothing for the user to retry.
+        val installer = FakeSplitInstaller(
+            updates = flowOf(SplitSessionUpdate(SplitStatus.REQUIRES_USER_CONFIRMATION, sessionId = 7)),
+            confirmationShown = false,
+        )
+
+        val progress = provider(installer).install(notes).toList()
+
+        assertThat(progress).hasSize(2)
+        assertThat(progress.first()).isEqualTo(InstallProgress.RequiresUserConfirmation)
+        val failure = progress.last() as InstallProgress.Failed
+        assertThat(failure.code).isEqualTo(FeatureSplitProvider.CONFIRMATION_UNAVAILABLE)
+        // Usually the app was in the background when Play asked; from a visible screen
+        // the next attempt works, so the user is offered one.
+        assertThat(failure.retryable).isTrue()
+    }
+
+    @Test
+    fun `no consent is requested for a session that did not ask for it`() = runTest {
+        val installer = FakeSplitInstaller(
+            updates = flowOf(
+                SplitSessionUpdate(SplitStatus.DOWNLOADING, bytesDownloaded = 1, totalBytes = 2),
+                SplitSessionUpdate(SplitStatus.INSTALLED),
+            ),
+        )
+
+        provider(installer).install(notes).toList()
+
+        assertThat(installer.confirmationRequests).isEmpty()
     }
 
     @Test

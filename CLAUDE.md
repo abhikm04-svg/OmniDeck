@@ -291,7 +291,41 @@ lives in `Extensions.kt`. Convention plugins take AGP/Kotlin/KSP as `compileOnly
 from the consuming build's root `plugins { ... apply false }` block and `libs.versions.toml`.
 
 Flipping a module to on-demand delivery is a Gradle property, not a code change:
-`-Pomnideck.dynamicModules=<id>,<id>` moves it from `implementation` to `dynamicFeatures`.
+`-Pomnideck.dynamicModules=<name>,<name>`, naming Gradle project directories under `modules/`.
+Everything that follows from it is derived (OD-301), and all of it matters — each piece below
+was a way the flip silently did nothing or silently broke:
+
+- `omnideck.android.library` **delegates to `omnideck.android.feature`** for a listed module, so
+  the module's own build file does not change. The two plugins are kept deliberately identical
+  apart from the Android plugin they apply.
+- The module's descriptor records `delivery=FEATURE_SPLIT`, which is what makes the kernel pick
+  `FeatureSplitProvider`. Before Phase 3 it always said `BUNDLED`, so a flipped module was handed
+  to the bundled provider — which reports every module installed and then fails to find a class
+  that is not on the device.
+- The descriptor is **published as a Gradle artifact and packaged into the base APK**, because a
+  dynamic feature's assets ship inside its split: left there, the descriptor would arrive only
+  after the download it exists to trigger, so the module could never be advertised at all.
+- A `<dist:module>` manifest with `<dist:on-demand/>` is generated for the split. There is no
+  Gradle DSL for delivery, and **the default is install-time** — a split without it ships with
+  the base APK and the entire acquisition path is silently never exercised.
+- `dist:title` must resolve in the *base* module (Play reads it before the split exists), so the
+  application plugin generates one string resource per on-demand module.
+- `checkArchitecture` exempts one edge for a dynamic feature: AGP compiles a split against
+  `:app`, and that dependency is the mechanism, not a design choice. Every other rule still
+  applies. See the note on `CheckArchitectureTask.dynamicFeature` for what it costs.
+- The module's descriptor directory stays registered as an asset source folder in **both**
+  modes, and `generateOmniModuleDescriptor` empties it for a split rather than the plugin
+  deregistering it. AGP's asset merge is incremental over the files in its source folders, so
+  a folder that simply stops being one reports no removals and the merged output keeps the
+  descriptor the previous mode wrote. That is what makes the property safe to flip in a build
+  directory that already exists — otherwise `bundleRelease` fails with "Modules 'base' and
+  '<id>' contain entry ... with different content" going one way, and the base APK silently
+  loses every descriptor coming back. CI flips it back on every run (the "switch goes back" step).
+
+Verify the whole flip with `./gradlew :app:bundleRelease -Pomnideck.dynamicModules=<name>` —
+release rather than debug, because the generated R8 keep rule for the reflectively-loaded
+`ModuleEntryPoint` is the one thing here that can only fail in a minified build. CI does this on
+every run (the `on-demand-delivery` job).
 
 ### Testing
 
@@ -301,6 +335,43 @@ standalone against these with no Shell and no kernel — if it needs `:app` or a
 work, the contract is missing something; raise it as an SDK issue rather than adding the
 dependency. Kernel unit tests use Robolectric; JUnit4 + Truth + Turbine + MockK +
 coroutines-test are applied to every project by the convention plugins.
+
+Instrumented tests are compiled for **one** build type, and AGP defaults it to `debug` — so
+they never see a minified app unless told to (OD-304). The keep rule for a module's
+reflectively-loaded `ModuleEntryPoint` only matters there:
+
+```bash
+./gradlew :app:connectedBenchmarkAndroidTest -Pomnideck.testBuildType=benchmark
+```
+
+`benchmark` is release's shape signed with the debug key. R8 also processes the *test* APK in
+that mode, which is what `app/proguard-test-rules.pro` exists for — test-only rules, deliberately
+not in `proguard-rules.pro` where they could be mistaken for something the shipped app needs.
+
+## What is not verified here, and why
+
+Three things Phase 3 needs are blocked on resources this checkout does not have. Each is
+recorded so the next person does not re-derive the blockage, or worse, quietly assume it away.
+
+- **No Play Console account exists** (OD-313). Nothing has been submitted to an Internal
+  Testing track, so the acquisition path has never run against a real Play client: the split
+  download, the `REQUIRES_USER_CONFIRMATION` consent dialog (OD-302), `deferredUninstall`
+  reclaiming space (OD-307) and both In-App Update flows (OD-309) are verified only against
+  their fakes and their seams. Each of those seams — `SplitInstaller`, `AppUpdateSource` —
+  exists precisely so the decision logic above it is testable without one. **The M2 exit gate
+  is not met and must not be recorded as met.**
+- **No backend** (OD-306, OD-310). The Catalog serves what the device discovered, not a served
+  catalog, and the kill switch reads a local flag rather than a pushed one. `ModuleManifest` is
+  already `@Serializable` and `FeatureFlagService` is already the interface modules use, so both
+  are a swap behind the capability boundary rather than a redesign — but until BE-101 exists
+  there is nothing to swap to, and an uninstalled module is still listed by its id because its
+  display name lives in code that is not on the device.
+- **The reference device refuses ADB installs.** The attached HyperOS phone returns
+  `INSTALL_FAILED_USER_RESTRICTED` for every install, by hand as well as through Gradle, which
+  blocks every `connected*AndroidTest` and the macrobenchmarks with it. It also will not deliver
+  the `profileinstaller` broadcast (see above), so `startupWithBaselineProfile` cannot run there
+  either (OD-318). A Gradle Managed Device is the fix for both and for OD-303's API 26→36 sweep;
+  until then, the on-device half of OD-303, OD-304, OD-307, OD-316 and OD-317 is unrun.
 
 ## Conventions
 

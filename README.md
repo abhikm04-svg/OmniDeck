@@ -13,8 +13,22 @@ property is enforced mechanically, not by convention — see [Guardrails](#guard
 Walking skeleton. The Shell launches, discovers whatever is under `modules/`, and renders it:
 the first feature module (Notes) is offline-first, persists to its own namespaced database and
 queues its changes for a sync service that does not exist yet, which it says so rather than
-pretending otherwise. Settings and a Privacy Centre are in place; dynamic delivery and the
-Catalog are not.
+pretending otherwise. Settings, a Privacy Centre and a Catalog are in place.
+
+Modules are delivered on demand through Play Feature Delivery, and which ones is a build
+switch rather than a source change:
+
+```bash
+./gradlew :app:bundleRelease -Pomnideck.dynamicModules=notes
+```
+
+That moves Notes out of the base APK into a Play split, marks the split on-demand, keeps its
+discovery descriptor in the base so it can still be advertised and installed, and downloads it
+the first time someone opens it. Nothing in the module, the Shell or the SDK changes. CI builds
+every module both ways on every run.
+
+Not yet built: the server-side Module Registry, so an uninstalled module is listed by its id
+rather than its real name and size; and satellite APKs.
 
 ## Building
 

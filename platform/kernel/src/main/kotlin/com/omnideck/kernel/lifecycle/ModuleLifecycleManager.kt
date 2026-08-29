@@ -8,7 +8,6 @@ import com.omnideck.kernel.loader.ModuleProvider
 import com.omnideck.kernel.registry.CapabilityRegistryImpl
 import com.omnideck.kernel.router.MutableDestinationRegistry
 import com.omnideck.kernel.services.ModuleScopedServicesFactory
-import com.omnideck.sdk.CapabilityId
 import com.omnideck.sdk.InstallProgress
 import com.omnideck.sdk.ModuleId
 import com.omnideck.sdk.ModuleInitResult
@@ -53,6 +52,16 @@ data class ModuleRuntime(
      * (architecture.md §7.1 — "remote clear **and** version bump").
      */
     val quarantineCause: QuarantineCause? = null,
+    /**
+     * True when the module is [ModuleState.GATED] only because this host is older
+     * than it requires (OD-308).
+     *
+     * The difference between a solvable problem and a dead end: an app update fixes
+     * this one, and nothing the user can do fixes a capability the installed host
+     * does not implement. The status screen offers the update on this flag alone,
+     * rather than on every gated module.
+     */
+    val hostUpdateWouldHelp: Boolean = false,
 )
 
 /** What put a module into [ModuleState.QUARANTINED]. */
@@ -103,6 +112,9 @@ class ModuleLifecycleManager @Inject constructor(
     private val instances = ConcurrentHashMap<ModuleId, OmniModule>()
     private val locks = ConcurrentHashMap<ModuleId, Mutex>()
 
+    /** The §7.1 compatibility gate, given a name and a test of its own (OD-308). */
+    private val compatibility = CompatibilityGate(hostInfo, capabilities)
+
     /** Reads descriptors and seeds the state map. Cheap: no module code runs here. */
     suspend fun discover() {
         val discovered = descriptorSource.descriptors()
@@ -150,6 +162,21 @@ class ModuleLifecycleManager @Inject constructor(
     }
 
     /**
+     * Asks the provider to abandon an install the user no longer wants (OD-302).
+     *
+     * The state is *not* moved here. Play answers a cancellation by emitting
+     * [InstallProgress.Canceled] on the session, which the `onEach` above already
+     * turns back into [ModuleState.ADVERTISED] — and a download Play declines to
+     * cancel, because it had already finished, must not leave the Catalog claiming
+     * the module is not installed when it is. Letting the one stream own the state
+     * keeps the two from disagreeing.
+     */
+    fun cancelInstall(id: ModuleId) {
+        val runtime = _modules.value[id] ?: return
+        providerFor(runtime.descriptor)?.cancelInstall(id)
+    }
+
+    /**
      * Brings a module to [ModuleState.ACTIVE], loading and initialising it if needed.
      * Idempotent and safe to call from the UI on every navigation.
      */
@@ -175,11 +202,9 @@ class ModuleLifecycleManager @Inject constructor(
                 val module = instances.getOrPut(id) { provider.load(current.descriptor) }
                 val manifest = module.manifest
 
-                compatibilityFailure(manifest)?.let { reason ->
-                    span.setStatus(ok = false, description = reason)
-                    return@use update(id) {
-                        it.copy(state = ModuleState.GATED, manifest = manifest, reason = reason)
-                    }
+                compatibility.evaluate(manifest)?.let { failure ->
+                    span.setStatus(ok = false, description = failure.message)
+                    return@use update(id) { it.gatedBy(failure, manifest) }
                 }
 
                 val services = servicesFactory.create(manifest)
@@ -388,18 +413,6 @@ class ModuleLifecycleManager @Inject constructor(
                 )
             }
         }
-    }
-
-    private fun compatibilityFailure(manifest: ModuleManifest): String? {
-        if (!manifest.isCompatibleWith(hostInfo.sdkVersion, hostInfo.versionCode)) {
-            return "Needs a newer version of OmniDeck (requires SDK ${manifest.sdkRange}, " +
-                "host is ${hostInfo.sdkVersion})."
-        }
-        val missing = manifest.unsatisfiedBy(CapabilityId.KERNEL_PROVIDED + capabilities.available())
-        if (missing.isNotEmpty()) {
-            return "Unavailable capabilities: ${missing.joinToString { it.value }}."
-        }
-        return null
     }
 
     private fun isKilled(id: ModuleId): Boolean = !flags.boolean(killSwitchKey(id), default = true)

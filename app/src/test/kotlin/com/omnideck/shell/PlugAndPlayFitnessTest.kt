@@ -3,7 +3,9 @@ package com.omnideck.shell
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import com.omnideck.generated.GeneratedModuleRegistry
+import com.omnideck.sdk.DeliveryKind
 import com.omnideck.sdk.ModuleId
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,6 +23,12 @@ import java.util.Properties
  *
  * Nothing here names a module. Every assertion is over whatever happens to be in the
  * build, so it keeps working — and keeps meaning something — as modules come and go.
+ *
+ * It also has to keep meaning something in **both** delivery modes (OD-301). Run with
+ * `-Pomnideck.dynamicModules=<every module>` there are no bundled modules at all, so
+ * assertions phrased as "the registry is not empty" would either fail or, worse, pass
+ * vacuously. They are phrased against the descriptors instead: those are in the base
+ * APK either way, and the registry is expected to hold exactly the bundled subset.
  */
 @RunWith(RobolectricTestRunner::class)
 class PlugAndPlayFitnessTest {
@@ -40,17 +48,47 @@ class PlugAndPlayFitnessTest {
         }
     }
 
+    /**
+     * The descriptor of an **on-demand** module has to be in the base APK (OD-301).
+     *
+     * A dynamic feature's assets are packaged into its split, so a descriptor left
+     * there arrives only after the download it exists to trigger — the module would
+     * never be advertised, never appear in the Catalog, and never be installable. This
+     * reads the merged base assets, so a descriptor that regressed into the split is
+     * simply absent here.
+     */
     @Test
-    fun `the generated registry covers exactly the modules that were discovered`() {
-        val discovered = descriptors().map { (_, props) -> props.getProperty("id") }.toSet()
+    fun `every discovered module declares a delivery kind the kernel understands`() {
+        val kinds = descriptors().map { (fileName, props) -> fileName to props.getProperty("delivery") }
 
-        assertThat(GeneratedModuleRegistry.factories.keys).isEqualTo(discovered)
+        assertThat(kinds).isNotEmpty()
+        kinds.forEach { (fileName, delivery) ->
+            assertWithMessage("%s declares no delivery kind", fileName).that(delivery).isNotNull()
+            assertWithMessage("%s declares an unknown delivery kind", fileName)
+                .that(DeliveryKind.entries.map { it.name })
+                .contains(delivery)
+        }
+    }
+
+    /**
+     * The generated registry is the *bundled* half, not the whole build.
+     *
+     * A split's code does not exist when the registry is generated, so it cannot be
+     * in it — and must not be, because a factory there would let the Shell try to
+     * construct a class the device has not downloaded. Split modules load
+     * reflectively, after `SplitCompat` has patched the class loader.
+     */
+    @Test
+    fun `the generated registry covers exactly the modules that are bundled into the base APK`() {
+        val bundled = descriptorsWithDelivery(DeliveryKind.BUNDLED)
+        val onDemand = descriptorsWithDelivery(DeliveryKind.FEATURE_SPLIT)
+
+        assertThat(GeneratedModuleRegistry.factories.keys).isEqualTo(bundled)
+        assertThat(GeneratedModuleRegistry.factories.keys).containsNoneIn(onDemand)
     }
 
     @Test
     fun `every registered factory constructs a module that agrees about its own identity`() {
-        assertThat(GeneratedModuleRegistry.factories).isNotEmpty()
-
         GeneratedModuleRegistry.factories.forEach { (id, factory) ->
             val module = factory()
             // The id in the descriptor, the id in the generated registry and the id
@@ -97,4 +135,12 @@ class PlugAndPlayFitnessTest {
             fileName to Properties().apply { context.assets.open("$dir/$fileName").use(::load) }
         }
     }
+
+    /** Module ids whose descriptor declares [kind]. Absent means bundled, as at runtime. */
+    private fun descriptorsWithDelivery(kind: DeliveryKind): Set<String> = descriptors()
+        .filter { (_, props) ->
+            (props.getProperty("delivery") ?: DeliveryKind.BUNDLED.name) == kind.name
+        }
+        .map { (_, props) -> props.getProperty("id") }
+        .toSet()
 }

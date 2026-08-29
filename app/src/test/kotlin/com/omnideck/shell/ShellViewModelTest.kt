@@ -22,9 +22,11 @@ import com.omnideck.sdk.SemVer
 import com.omnideck.sdk.SemVerRange
 import com.omnideck.sdk.TeamRef
 import com.omnideck.sdk.capability.NavResult
+import com.omnideck.shell.navigation.ModuleShortcuts
 import com.omnideck.shell.navigation.ShellDestinations
 import com.omnideck.shell.navigation.ShellNavigationSink
 import com.omnideck.shell.navigation.ShellRoutes
+import com.omnideck.shell.update.HostUpdater
 import com.omnideck.testing.FakeTelemetryService
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -203,12 +205,24 @@ class ShellViewModelTest {
         assertThat(vm.state.value.message).isNull()
     }
 
+    /**
+     * Mocked rather than real: publishing shortcuts needs a `Context` and a launcher,
+     * and neither says anything about the navigation this class is here to test. That
+     * the *right* modules are offered is asserted in ModuleShortcutsTest.
+     */
+    private val shortcuts = mockk<ModuleShortcuts>(relaxed = true)
+
+    /** Play is not reachable from a unit test; the update flow is asserted in HostUpdaterTest. */
+    private val updater = mockk<HostUpdater>(relaxed = true)
+
     private fun viewModel() = ShellViewModel(
         lifecycle = lifecycle,
         router = router,
         telemetry = telemetry,
         navigationSink = sink,
         shellDestinations = ShellDestinations(),
+        shortcuts = shortcuts,
+        updater = updater,
         destinations = destinations,
     )
 

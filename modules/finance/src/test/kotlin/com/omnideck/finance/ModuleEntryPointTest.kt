@@ -1,0 +1,77 @@
+package com.omnideck.finance
+
+import androidx.compose.runtime.Composable
+import com.google.common.truth.Truth.assertThat
+import com.omnideck.sdk.DestinationRegistry
+import com.omnideck.sdk.ModuleInitResult
+import com.omnideck.sdk.PurgeScope
+import com.omnideck.sdk.RouteArgs
+import com.omnideck.sdk.SemVer
+import com.omnideck.testing.FakePlatformServices
+import kotlinx.coroutines.test.runTest
+import org.junit.Test
+
+/**
+ * The module's contract, exercised with no Shell and no kernel on the classpath.
+ *
+ * That is the property worth protecting as this module grows: if a test here ever
+ * needs `:app` or `:platform:kernel` to pass, something is missing from the SDK — and
+ * the answer is to raise it as an SDK issue, not to add the dependency.
+ */
+class ModuleEntryPointTest {
+
+    private val module = ModuleEntryPoint()
+    private val services = FakePlatformServices(moduleId = module.manifest.id)
+
+    @Test
+    fun `initialises against the platform fakes alone`() = runTest {
+        assertThat(module.initialize(services)).isEqualTo(ModuleInitResult.Ready)
+        assertThat(services.telemetry.eventNames()).contains("finance_initialized")
+    }
+
+    @Test
+    fun `initialize is idempotent, because the Shell retries it`() = runTest {
+        module.initialize(services)
+
+        assertThat(module.initialize(services)).isEqualTo(ModuleInitResult.Ready)
+    }
+
+    @Test
+    fun `registers the entry route its manifest advertises`() = runTest {
+        module.initialize(services)
+        val registry = RecordingRegistry()
+
+        module.registerDestinations(registry)
+
+        assertThat(registry.patterns).contains(module.manifest.entryRoute.uri)
+    }
+
+    @Test
+    fun `the manifest is self-consistent`() {
+        val manifest = module.manifest
+
+        assertThat(manifest.entryRoute.host).isEqualTo(manifest.id.shortId)
+        assertThat(manifest.requiredCapabilities).isNotEmpty()
+        assertThat(manifest.dataCategories).isNotEmpty()
+        assertThat(manifest.isCompatibleWith(SemVer(1, 0, 0), hostVersionCode = 1)).isTrue()
+    }
+
+    @Test
+    fun `a full purge leaves nothing behind`() = runTest {
+        module.initialize(services)
+
+        module.purge(PurgeScope.ALL)
+
+        // Add assertions here as this module gains storage: erasure is the module's
+        // half of a legal obligation, not a nice-to-have (architecture.md §12.5).
+        assertThat(services.storage).isNotNull()
+    }
+
+    private class RecordingRegistry : DestinationRegistry {
+        val patterns = mutableListOf<String>()
+
+        override fun destination(pattern: String, content: @Composable (RouteArgs) -> Unit) {
+            patterns += pattern
+        }
+    }
+}

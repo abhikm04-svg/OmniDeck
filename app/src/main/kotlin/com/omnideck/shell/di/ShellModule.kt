@@ -2,10 +2,14 @@ package com.omnideck.shell.di
 
 import com.omnideck.generated.GeneratedModuleRegistry
 import com.omnideck.kernel.loader.BundledModuleFactories
+import com.omnideck.kernel.loader.ConfirmationLauncher
 import com.omnideck.kernel.router.NavigationCommandSink
 import com.omnideck.kernel.services.PermissionRequester
+import com.omnideck.shell.ActivityConfirmationLauncher
 import com.omnideck.shell.ActivityPermissionRequester
 import com.omnideck.shell.navigation.ShellNavigationSink
+import com.omnideck.shell.update.AppUpdateSource
+import com.omnideck.shell.update.PlayAppUpdateSource
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -14,10 +18,11 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * The three places the kernel deliberately cannot reach on its own: the Compose
- * navigation host, the Activity that owns ActivityResult contracts, and the
- * compile-time module registry. All are bound here, in the Shell, so the kernel stays
- * free of UI, Activity and build-generated references and remains unit-testable.
+ * The places the kernel deliberately cannot reach on its own: the Compose navigation
+ * host, the Activity that owns ActivityResult contracts — for runtime permissions and
+ * for Play's split-install consent dialog (OD-302) — and the compile-time module
+ * registry. All are bound here, in the Shell, so the kernel stays free of UI, Activity
+ * and build-generated references and remains unit-testable.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -30,6 +35,18 @@ abstract class ShellModule {
     @Binds
     @Singleton
     abstract fun bindPermissionRequester(impl: ActivityPermissionRequester): PermissionRequester
+
+    @Binds
+    @Singleton
+    abstract fun bindConfirmationLauncher(impl: ActivityConfirmationLauncher): ConfirmationLauncher
+
+    /**
+     * OD-309. The seam over Play's update manager, for the same reason `SplitInstaller`
+     * has one: the policy above it is testable, this is not.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindAppUpdateSource(impl: PlayAppUpdateSource): AppUpdateSource
 
     companion object {
 

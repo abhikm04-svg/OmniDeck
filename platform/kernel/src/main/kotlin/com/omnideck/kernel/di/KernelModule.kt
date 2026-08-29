@@ -11,6 +11,7 @@ import com.omnideck.kernel.lifecycle.HostInfo
 import com.omnideck.kernel.loader.AssetModuleDescriptorSource
 import com.omnideck.kernel.loader.BundledModuleFactories
 import com.omnideck.kernel.loader.BundledModuleProvider
+import com.omnideck.kernel.loader.ConfirmationLauncher
 import com.omnideck.kernel.loader.FeatureSplitProvider
 import com.omnideck.kernel.loader.ModuleDescriptorSource
 import com.omnideck.kernel.loader.ModuleProvider
@@ -122,12 +123,19 @@ object KernelModule {
         @ApplicationContext context: Context,
         dispatchers: DispatcherProvider,
         bundledFactories: BundledModuleFactories,
+        confirmation: ConfirmationLauncher,
     ): Set<ModuleProvider> = setOf(
         // OD-202: the generated constructors come from the Shell, so a bundled
         // module starts with no class-name lookup on the startup path.
         BundledModuleProvider(dispatchers.io, bundledFactories),
         FeatureSplitProvider(
-            installer = PlaySplitInstaller(SplitInstallManagerFactory.create(context)),
+            installer = PlaySplitInstaller(
+                manager = SplitInstallManagerFactory.create(context),
+                // OD-302. Play holds a metered or large download until its consent
+                // dialog is answered, and only an Activity can show one — so the
+                // Shell supplies the launcher, as it does for runtime permissions.
+                confirmation = confirmation,
+            ),
             io = dispatchers.io,
             // Re-read per load, not captured: SplitCompat swaps the class loader
             // in after an install, and a captured one cannot see the new code.

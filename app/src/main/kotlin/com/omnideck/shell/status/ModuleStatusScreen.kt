@@ -9,9 +9,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.omnideck.designsystem.component.ErrorSurface
+import com.omnideck.designsystem.component.PrimaryButton
 import com.omnideck.designsystem.theme.Spacing
 import com.omnideck.kernel.lifecycle.ModuleRuntime
 import com.omnideck.kernel.lifecycle.QuarantineCause
@@ -36,6 +38,14 @@ fun ModuleStatusRoute(moduleId: ModuleId, shell: ShellViewModel = hiltViewModel(
         moduleId = moduleId,
         runtime = runtime,
         onRetry = { shell.onRetryModule(moduleId) },
+        // Offered only where an update would actually resolve it (OD-308/OD-309).
+        // A module gated on a capability this build does not implement is not fixed
+        // by any update, and offering one there teaches users the button is a lie.
+        onUpdateApp = if (runtime?.hostUpdateWouldHelp == true) {
+            { shell.onUpdateHost() }
+        } else {
+            null
+        },
         onBack = shell::onBack,
     )
 }
@@ -47,6 +57,7 @@ fun ModuleStatusScreen(
     onRetry: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onUpdateApp: (() -> Unit)? = null,
 ) {
     val name = runtime?.manifest?.displayName?.default ?: moduleId.shortId.replaceFirstChar(Char::titlecase)
 
@@ -64,6 +75,13 @@ fun ModuleStatusScreen(
             onSecondary = onBack,
             secondaryLabel = "Go back",
         )
+        onUpdateApp?.let {
+            PrimaryButton(
+                text = "Update OmniDeck",
+                onClick = it,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+        }
         runtime?.manifest?.owner?.let { owner ->
             Text(
                 text = "Reported to $owner",

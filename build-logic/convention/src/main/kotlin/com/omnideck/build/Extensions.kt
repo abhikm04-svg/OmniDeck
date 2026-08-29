@@ -128,3 +128,55 @@ internal fun Project.configureTestDependencies() = dependencies {
     add("testImplementation", libs.lib("truth"))
     add("testImplementation", libs.lib("mockk"))
 }
+
+// ---------------------------------------------------------------------------
+// On-demand delivery (Phase 3, OD-301).
+//
+// ADR-001's claim is that a module's delivery mechanism is a *deployment* decision,
+// not a design one. That is only true if flipping it costs no source change, so the
+// switch is a Gradle property read here and nowhere else, and everything downstream —
+// which plugin a module gets, where its discovery descriptor is packaged, what
+// DeliveryKind the kernel reads at runtime — is derived from it.
+// ---------------------------------------------------------------------------
+
+/** `-Pomnideck.dynamicModules=notes,finance`. Gradle project names, not module ids. */
+internal const val DYNAMIC_MODULES_PROPERTY = "omnideck.dynamicModules"
+
+/**
+ * `-Pomnideck.testBuildType=benchmark`. Which build type androidTest is compiled for
+ * (OD-304) — AGP allows exactly one, and defaults it to the unminified debug build.
+ */
+internal const val TEST_BUILD_TYPE_PROPERTY = "omnideck.testBuildType"
+
+/**
+ * The Gradle configuration a feature module publishes its discovery descriptor on,
+ * and the Shell resolves for the on-demand ones.
+ *
+ * Consumed by name rather than by attribute matching, deliberately. An Android
+ * project exposes dozens of consumable variants, and resolving one custom attribute
+ * against them relies on Gradle's disambiguation preferring the exact match — which
+ * is true but is a subtlety to discover from a "cannot choose between variants"
+ * error at the moment someone flips a module on demand. Naming the configuration has
+ * no matching algorithm to be wrong about.
+ */
+internal const val MODULE_DESCRIPTOR_CONFIGURATION = "omnideckModuleDescriptor"
+
+/** The Shell's resolvable end of [MODULE_DESCRIPTOR_CONFIGURATION]. */
+internal const val ON_DEMAND_DESCRIPTORS_CONFIGURATION = "omnideckOnDemandModuleDescriptors"
+
+/** Project names listed for on-demand delivery. Empty in an ordinary build. */
+internal fun Project.onDemandModuleNames(): Set<String> =
+    providers.gradleProperty(DYNAMIC_MODULES_PROPERTY)
+        .getOrElse("")
+        .split(',')
+        .map(String::trim)
+        .filter(String::isNotEmpty)
+        .toSet()
+
+/**
+ * True when *this* project is a feature module the build has been told to deliver
+ * on demand. Scoped to `:modules:` so a platform library can never be turned into a
+ * Play split by a stray property value.
+ */
+internal fun Project.isOnDemandModule(): Boolean =
+    path.startsWith(":modules:") && name in onDemandModuleNames()

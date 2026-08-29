@@ -1,20 +1,26 @@
 package com.omnideck.shell
 
+import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
+import com.google.android.play.core.splitcompat.SplitCompat
 import com.omnideck.designsystem.theme.OmniDeckTheme
+import com.omnideck.kernel.loader.ConfirmationLauncher
 import com.omnideck.kernel.services.PermissionRequester
 import com.omnideck.sdk.capability.PermissionBroker
 import com.omnideck.sdk.capability.Router
 import com.omnideck.shell.navigation.ExternalRoutes
 import com.omnideck.shell.navigation.ShellNavHost
 import com.omnideck.shell.navigation.ShellNavigationSink
+import com.omnideck.shell.update.UpdateFlowStarterHolder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -37,7 +43,13 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var permissionRequesterHolder: ActivityPermissionRequester
 
+    @Inject lateinit var confirmationLauncherHolder: ActivityConfirmationLauncher
+
+    @Inject lateinit var updateFlowStarterHolder: UpdateFlowStarterHolder
+
     private var pendingPermission: ((PermissionBroker.PermissionResult) -> Unit)? = null
+
+    private var pendingConfirmation: ((Boolean) -> Unit)? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -54,6 +66,43 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    /**
+     * OD-302. Play's consent dialog for a large or metered download, launched as an
+     * `IntentSender` the system owns. Play holds the session until this is answered,
+     * so failing to launch it is the "stuck at 0%" report.
+     */
+    private val confirmationLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult(),
+    ) { result ->
+        val callback = pendingConfirmation
+        pendingConfirmation = null
+        callback?.invoke(result.resultCode == RESULT_OK)
+    }
+
+    /**
+     * OD-309. Play's own update UI, launched the same way as its consent dialog.
+     *
+     * The result is deliberately ignored: a user who declines a flexible update has
+     * declined it, and a completed immediate update restarts the app, so there is no
+     * state here worth carrying forward either way.
+     */
+    private val updateLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult(),
+    ) { }
+
+    /**
+     * OD-303. `SplitCompat.install()` in the Application makes a freshly installed
+     * split's *code* reachable; its *resources* are only reachable from a context
+     * that has also been patched. Modules contribute Composables rendered inside this
+     * Activity (ADR-003), so without this a split's strings and drawables throw
+     * `Resources$NotFoundException` while its Kotlin runs perfectly — a failure that
+     * appears only for on-demand modules, and only after the first install.
+     */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(newBase)
+        SplitCompat.installActivity(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -65,6 +114,31 @@ class MainActivity : ComponentActivity() {
                 permissionLauncher.launch(permission)
                 continuation.invokeOnCancellation { pendingPermission = null }
             }
+        }
+
+        confirmationLauncherHolder.attach { intentSender ->
+            suspendCancellableCoroutine { continuation ->
+                pendingConfirmation = { continuation.resume(it) }
+                // A stale IntentSender — a session Play has since cancelled — throws
+                // rather than returning. Treated as a decline: the install stops with
+                // a message instead of waiting on a dialog that will never appear.
+                val launched = runCatching {
+                    confirmationLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                }.isSuccess
+                if (!launched) {
+                    pendingConfirmation = null
+                    continuation.resume(false)
+                }
+                continuation.invokeOnCancellation { pendingConfirmation = null }
+            }
+        }
+
+        // OD-309. Play renders its own update UI; all the Activity supplies is the
+        // ActivityResult launcher to render it from, exactly as for the split-install
+        // consent dialog above. `runCatching` because Play rejects a flow it did not
+        // offer, and a refusal is reported to the caller rather than crashing here.
+        updateFlowStarterHolder.attach { manager, info, options ->
+            runCatching { manager.startUpdateFlowForResult(info, updateLauncher, options) }.isSuccess
         }
 
         setContent {
@@ -96,6 +170,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         permissionRequesterHolder.detach()
+        confirmationLauncherHolder.detach()
         super.onDestroy()
     }
 }
@@ -123,4 +198,30 @@ class ActivityPermissionRequester @Inject constructor() : PermissionRequester {
         rationale: PermissionBroker.Rationale,
     ): PermissionBroker.PermissionResult =
         delegate?.invoke(permission, rationale) ?: PermissionBroker.PermissionResult.DENIED
+}
+
+/**
+ * The same bridge for Play's split-install consent dialog (OD-302).
+ *
+ * Returning false with no Activity attached is the point of this class, not a
+ * degenerate case: Play asks for confirmation whenever it likes, including while the
+ * app is in the background, and the kernel needs a definite "could not ask" so it can
+ * end the install with something the user can retry rather than a progress bar that
+ * never moves.
+ */
+@javax.inject.Singleton
+class ActivityConfirmationLauncher @Inject constructor() : ConfirmationLauncher {
+
+    @Volatile
+    private var delegate: (suspend (IntentSender) -> Boolean)? = null
+
+    fun attach(block: suspend (IntentSender) -> Boolean) {
+        delegate = block
+    }
+
+    fun detach() {
+        delegate = null
+    }
+
+    override suspend fun launch(intentSender: IntentSender): Boolean = delegate?.invoke(intentSender) ?: false
 }

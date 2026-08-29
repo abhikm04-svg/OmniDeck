@@ -157,6 +157,10 @@ class QualityConventionPlugin : Plugin<Project> {
         }
 
         afterEvaluate {
+            // Read here, not inside the configure lambda below: the value must be a
+            // plain Boolean by the time the task is realised, never a live project
+            // lookup the configuration cache would have to carry.
+            val isDynamicFeature = pluginManager.hasPlugin("com.android.dynamic-feature")
             val declared = configurations.filter { it.name in DEPENDENCY_CONFIGURATIONS }
 
             val projectDeps = declared
@@ -182,6 +186,7 @@ class QualityConventionPlugin : Plugin<Project> {
             checkArchitecture.configure {
                 dependencyPaths.set(projectDeps)
                 externalDependencies.set(externalDeps)
+                dynamicFeature.set(isDynamicFeature)
             }
         }
 
@@ -210,6 +215,30 @@ abstract class CheckArchitectureTask : DefaultTask() {
 
     @get:Input abstract val externalDependencies: ListProperty<String>
 
+    /**
+     * True for a module on the on-demand path (OD-301).
+     *
+     * Play Feature Delivery inverts the dependency: a split is compiled against the
+     * base APK and takes its application id from it, so `omnideck.android.feature`
+     * must declare an edge from the module to `:app`. AGP gives no way to avoid it —
+     * the build fails resolving the base metadata without it. That edge is the
+     * mechanism, not a design decision, so it is exempted here rather than left to
+     * fail a rule it cannot obey.
+     *
+     * Be clear about what this costs: a split *can* see the kernel transitively
+     * through the Shell, which the layering rule otherwise forbids. Nothing in the
+     * dependency graph stops a module author from reaching for it. What still holds is
+     * that the module has no *declared* kernel dependency — so it keeps building and
+     * testing standalone, and the day it stops, `omnideck.dynamicModules` becomes the
+     * only thing keeping it compiling and the drift is immediately visible. Every other
+     * rule below, module-to-module included, applies to a split exactly as before.
+     *
+     * Not named `isDynamicFeature`: Gradle only treats an `is`-prefixed getter as a
+     * managed property when it returns a primitive boolean, so the abstract accessor
+     * would fail class generation ("Cannot have abstract method") before the task ran.
+     */
+    @get:Input abstract val dynamicFeature: Property<Boolean>
+
     init {
         group = "verification"
         description = "Enforces the OmniDeck layering rules (architecture.md §5.1)."
@@ -225,6 +254,9 @@ abstract class CheckArchitectureTask : DefaultTask() {
         val isSdkCore = path == ":platform:omnideck-sdk-core"
         val isSdk = path == ":platform:omnideck-sdk"
 
+        // AGP owns this edge on a dynamic feature; see [dynamicFeature].
+        val baseAppEdgeIsAgpOwned = dynamicFeature.getOrElse(false)
+
         deps.forEach { dep ->
             when {
                 // Rule 2 — modules are islands.
@@ -236,11 +268,11 @@ abstract class CheckArchitectureTask : DefaultTask() {
                     violations += "$path depends on $dep. Modules consume the kernel only through " +
                         "the SDK's PlatformServices facade (architecture.md §6.3)."
 
-                isModule && dep == ":app" ->
+                isModule && dep == ":app" && !baseAppEdgeIsAgpOwned ->
                     violations += "$path depends on :app. Nothing may depend on the Shell."
 
                 // Rule 4 — nothing depends on :app.
-                dep == ":app" && path != ":app" ->
+                dep == ":app" && path != ":app" && !baseAppEdgeIsAgpOwned ->
                     violations += "$path depends on :app."
 
                 // Rule 3 — the SDK stays thin and Android-free at its core.
@@ -291,8 +323,9 @@ abstract class CheckArchitectureTask : DefaultTask() {
             )
         }
         val externalCount = externalDependencies.getOrElse(emptyList()).size
+        val delivery = if (baseAppEdgeIsAgpOwned) ", on-demand split" else ""
         logger.lifecycle(
-            "checkArchitecture: $path OK (${deps.size} project, $externalCount external dependencies)",
+            "checkArchitecture: $path OK (${deps.size} project, $externalCount external dependencies$delivery)",
         )
     }
 
