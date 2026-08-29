@@ -309,16 +309,16 @@ jobs:
       - name: API-floor sweep (OD-303)
         run: ./gradlew :platform:kernel:apiFloorPixel2DebugAndroidTest --stacktrace
 
-      # OD-304/OD-307's release-shape half: minified, shrunk, non-debuggable, signed
-      # with the debug key so it installs without release credentials (see :app's
-      # convention plugin for why `benchmark` — not `release` — is the vehicle). This
-      # is what a `ClassNotFoundException` from a missing R8 keep rule can only show
-      # up in, and what a deferred-uninstall/purge fan-out needs a real install
-      # session for.
-      - name: Release-shape module loading (OD-304/OD-307)
-        run: |
-          ./gradlew :app:pixel6Api34DebugAndroidTest \
-            -Pomnideck.testBuildType=benchmark --stacktrace
+      # NOT run here: OD-304's release-shape half (minified, shrunk, non-debuggable).
+      # `-Pomnideck.testBuildType=benchmark` builds it, but R8 strips Hilt's test
+      # Application along with the `Hilt_*` superclass it generates, and
+      # `proguard-test-rules.pro`'s keep rules are not enough to stop it — confirmed
+      # on this job's own first PR run: the instrumentation process crashes with
+      # `NoClassDefFoundError: HiltTestApplication` before a single test runs. That is
+      # a test-harness gap (the *app* under test is fine — CLAUDE.md, "What is not
+      # verified here"), not something to paper over with a CI step that cannot pass.
+      # OD-304 was verified instead by installing and launching the minified APK
+      # directly, not through `connectedAndroidTest`; see CLAUDE.md for how.
 
       - name: Upload reports
         if: always()

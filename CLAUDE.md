@@ -416,9 +416,12 @@ listed below it — it is still a software emulator, and it still has no Play St
   keeps both and it is still not enough. **OD-304 was answered without it**: the minified APK was
   installed and launched directly, and both modules discover, activate and render — including a
   module's `Degraded` banner, so `ModuleInitResult` propagates through a build R8 has been over.
-  That is the gate bullet "release-build module loading verified — not just debug". Confirmed
-  again on `pixel6Api34` via `-Pomnideck.testBuildType=benchmark` on the *debug* androidTest
-  runner against the app's `benchmark` build type (see the CI `on-device` job).
+  That is the gate bullet "release-build module loading verified — not just debug". A GMD does
+  **not** reopen this: `-Pomnideck.testBuildType=benchmark` on `pixel6Api34` hits the exact same
+  crash (`NoClassDefFoundError: HiltTestApplication`) as it always has, because `connectedAndroidTest`
+  runs the *instrumented test* APK, which is what R8 strips — not the app APK, which is fine.
+  Confirmed by this repo's own CI: it was tried as an `on-device` job step and removed once it
+  reproduced the crash rather than kept as a step that cannot pass.
 - **OD-319 — "kill the module process" restated as containment, and demonstrated.** Bundled and
   split modules still share the Shell process; there is nothing to kill until `processIsolation`
   modules (§12.6, Phase 6) or a satellite (Phase 5) exist. `QuarantineContainmentInstrumentedTest`
