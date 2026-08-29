@@ -22,6 +22,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -104,6 +105,22 @@ class ShellViewModel @Inject constructor(
     fun onModuleClicked(id: ModuleId) = viewModelScope.launch {
         val runtime = lifecycle.modules.value[id] ?: return@launch
         navigate(runtime.manifest?.entryRoute ?: Route.of(id, "home"))
+    }
+
+    /**
+     * A route the OS handed us — a notification tap, a launcher shortcut, an
+     * `omnideck://` link (OD-204, OD-314).
+     *
+     * Held until discovery has run. The Router resolves a module route by asking the
+     * lifecycle manager who owns the host, and on a cold start `handleDeepLink` fires
+     * from `onCreate` while that map is still empty — so the route resolved to
+     * nothing and was dropped with a "nothing handles this" event. Every external
+     * entry point lands on a cold start by definition, which made this the common
+     * case rather than a corner of it.
+     */
+    fun onExternalRoute(route: Route) = viewModelScope.launch {
+        state.first { it.ready }
+        navigate(route)
     }
 
     fun onSettings() = viewModelScope.launch { navigate(ShellRoutes.settings()) }

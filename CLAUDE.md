@@ -366,12 +366,22 @@ recorded so the next person does not re-derive the blockage, or worse, quietly a
   are a swap behind the capability boundary rather than a redesign — but until BE-101 exists
   there is nothing to swap to, and an uninstalled module is still listed by its id because its
   display name lives in code that is not on the device.
-- **The reference device refuses ADB installs.** The attached HyperOS phone returns
-  `INSTALL_FAILED_USER_RESTRICTED` for every install, by hand as well as through Gradle, which
-  blocks every `connected*AndroidTest` and the macrobenchmarks with it. It also will not deliver
-  the `profileinstaller` broadcast (see above), so `startupWithBaselineProfile` cannot run there
-  either (OD-318). A Gradle Managed Device is the fix for both and for OD-303's API 26→36 sweep;
-  until then, the on-device half of OD-303, OD-304, OD-307, OD-316 and OD-317 is unrun.
+- **Gradle cannot install on the reference device**, though `adb install` can. The attached
+  HyperOS phone refuses AGP's *session* install (`install-create` / `install-commit`) with
+  `INSTALL_FAILED_USER_RESTRICTED` while accepting a streamed `adb install -r -t` of the same
+  APK seconds later. Every `connected*AndroidTest` task therefore reports 0 tests, and the
+  macrobenchmarks with them. Installing by hand and driving instrumentation with
+  `adb shell am instrument -w <pkg>.test/com.omnideck.shell.OmniDeckTestRunner` works around it.
+  The phone also will not deliver the `profileinstaller` broadcast (see above), so
+  `startupWithBaselineProfile` cannot run there at all (OD-318). A Gradle Managed Device is the
+  fix for both, and for OD-303's API 26→36 sweep.
+- **The minified instrumented-test APK does not start.** With `-Pomnideck.testBuildType=benchmark`
+  the app minifies correctly but the *test* process dies in `OmniDeckTestRunner` on Hilt's test
+  Application, which R8 strips along with the `Hilt_*` superclass it generates. `proguard-test-rules.pro`
+  keeps both and it is still not enough. **OD-304 was answered without it**: the minified APK was
+  installed and launched directly, and both modules discover, activate and render — including a
+  module's `Degraded` banner, so `ModuleInitResult` propagates through a build R8 has been over.
+  That is the gate bullet "release-build module loading verified — not just debug".
 
 ## Conventions
 
