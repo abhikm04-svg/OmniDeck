@@ -245,3 +245,87 @@ jobs:
             app/build/reports/
             app/build/test-results/
           retention-days: 14
+
+  # OD-317/OD-318/OD-303/OD-307. Every `connected*AndroidTest` task above this line
+  # runs nowhere in CI, because there has never been a device to run it on — that gap
+  # is what carried those four tickets out of Phase 2 and then out of Phase 3. A
+  # Gradle Managed Device closes it: AGP owns the whole lifecycle (image, boot,
+  # install, teardown) from a device definition in source control
+  # (`configureManagedDevices`, Extensions.kt), so there is no physical unit's OEM
+  # install policy or broadcast policy to fight — the two failure modes that blocked
+  # this on the HyperOS reference phone (see CLAUDE.md, "What is not verified here").
+  #
+  # `pixel6Api34` is the reference device (OD-317: `architecture.md` QA-1..QA-3 name
+  # a physical "Pixel 6a", for which no GMD system image exists; a Pixel 6 profile at
+  # API 34 is the closest published pairing, and it is what every budget in this repo
+  # is recorded against from here on). `apiFloorPixel2` is `minSdk` itself (API 26,
+  # ADR decision D-3) — the low end of OD-303's sweep.
+  on-device:
+    name: On-device (Gradle Managed Device)
+    runs-on: ubuntu-latest
+    # First run downloads a system image per device (~1-2 GB); GMDs are supported on
+    # GitHub's hosted Linux runners because /dev/kvm is available there, unlike most
+    # self-hosted or containerized CI, where this job would need to be skipped.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      # KVM is present on GitHub-hosted Linux runners but not group-readable by the
+      # runner user out of the box; without this the emulator falls back to software
+      # rendering and a boot that takes seconds takes minutes, if it does not exceed
+      # the job timeout first.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Cache Android Virtual Devices
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: gmd-avd-${{ runner.os }}-${{ hashFiles('build-logic/convention/src/main/kotlin/com/omnideck/build/Extensions.kt') }}
+
+      # OD-316 (persistence survives process death) and the device half of OD-212
+      # (plug-and-play) for the Shell; SecureStoreImpl's Keystore-backed tests for the
+      # kernel, which have no JVM/Robolectric equivalent (CLAUDE.md, "Commands").
+      - name: Kernel + Shell connected tests, reference device
+        run: |
+          ./gradlew :platform:kernel:pixel6Api34DebugAndroidTest \
+            :app:pixel6Api34DebugAndroidTest --stacktrace
+
+      # OD-303 — the API 26->36 sweep this ticket actually asks for, not just a
+      # reading at one API level. Kept as its own step so a floor-only failure is
+      # legible in the CI log rather than folded into the step above.
+      - name: API-floor sweep (OD-303)
+        run: ./gradlew :platform:kernel:apiFloorPixel2DebugAndroidTest --stacktrace
+
+      # NOT run here: OD-304's release-shape half (minified, shrunk, non-debuggable).
+      # `-Pomnideck.testBuildType=benchmark` builds it, but R8 strips Hilt's test
+      # Application along with the `Hilt_*` superclass it generates, and
+      # `proguard-test-rules.pro`'s keep rules are not enough to stop it — confirmed
+      # on this job's own first PR run: the instrumentation process crashes with
+      # `NoClassDefFoundError: HiltTestApplication` before a single test runs. That is
+      # a test-harness gap (the *app* under test is fine — CLAUDE.md, "What is not
+      # verified here"), not something to paper over with a CI step that cannot pass.
+      # OD-304 was verified instead by installing and launching the minified APK
+      # directly, not through `connectedAndroidTest`; see CLAUDE.md for how.
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: on-device-reports
+          path: |
+            **/build/reports/androidTests/
+            **/build/outputs/androidTest-results/
+          retention-days: 14

@@ -84,6 +84,29 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // OD-317. Duplicated rather than shared with `configureManagedDevices` in
+    // build-logic: this module configures its `android {}` block by hand throughout
+    // (see the file header), and a precompiled-script-plugin `internal` function is
+    // not visible to a build script outside that composite build in the first place.
+    // `pixel6Api34` is the same id `:app` and `:platform:kernel` register, so a
+    // benchmark run and a connected-test run both name the reference device the same
+    // way; `apiFloorPixel2` is omitted here on purpose — API 26 is below this
+    // module's own `minSdk = 28` floor above, so no macrobenchmark task could ever
+    // target it.
+    testOptions {
+        managedDevices {
+            localDevices {
+                if (findByName("pixel6Api34") == null) {
+                    create("pixel6Api34") {
+                        device = "Pixel 6"
+                        apiLevel = 34
+                        systemImageSource = "aosp-atd"
+                    }
+                }
+            }
+        }
+    }
+
     buildTypes {
         // Must mirror :app's benchmark type. `matchingFallbacks` is what lets this
         // module resolve against the app when a build type has no exact counterpart.

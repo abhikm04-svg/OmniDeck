@@ -91,8 +91,75 @@ internal fun Project.configureAndroidCommon(ext: CommonExtension<*, *, *, *, *, 
         }
     }
 
+    configureManagedDevices(this)
+
     buildFeatures {
         buildConfig = false
+    }
+}
+
+/**
+ * Gradle Managed Devices — AGP-provisioned, source-controlled emulators, added to
+ * close the gap OD-317/OD-318/OD-303/OD-307 were carried on: a physical phone is not
+ * a reproducible reference and, on the HyperOS unit this repo had been verified
+ * against, actively refuses two things CI needs (a Gradle *session* install, and the
+ * `profileinstaller` broadcast a Baseline Profile check depends on — see CLAUDE.md,
+ * "What is not verified here"). Neither problem exists on a GMD: AGP owns the whole
+ * lifecycle, so there is no OEM install path or broadcast policy to fight.
+ *
+ * Two devices, not one, because Phase 3's actual ask (OD-303) is a *sweep* — API
+ * 26 (`minSdk`, ADR decision D-3) through the compile/target ceiling — not a single
+ * data point:
+ *
+ *  - **`pixel6Api34`** is the OmniDeck reference device. `architecture.md` QA-1..QA-3
+ *    name a physical "Pixel 6a"; no such system image exists for a GMD, so a Pixel 6
+ *    device profile at API 34 — the closest Google-published pairing — stands in for
+ *    it. Every budget recorded from here on (§16) cites this id, not whatever phone
+ *    happened to be plugged in. `aosp-atd` is an Automated Test Device image: built
+ *    for unattended CI use (faster boot, no Play Store licence prompt), which is all
+ *    OmniDeck's connected tests and macrobenchmarks ever need from it.
+ *  - **`apiFloorPixel2`** anchors the low end of the sweep at `minSdk`. No ATD image
+ *    exists this far back, so it uses a plain `aosp` image instead.
+ *
+ * Grouped as `omnideckSweep` so both run from one invocation:
+ * `./gradlew :app:omnideckSweepGroupConnectedCheck`. Either device alone:
+ * `./gradlew :app:pixel6Api34DebugAndroidTest` (swap the device id for the other).
+ */
+internal fun Project.configureManagedDevices(ext: CommonExtension<*, *, *, *, *, *>) = with(ext) {
+    testOptions {
+        managedDevices {
+            // Called directly on the container, not as a `localDevices { ... }`
+            // block: that sugar is a Kotlin DSL extension (`org.gradle.kotlin.dsl`)
+            // that ordinary `.gradle.kts` scripts get for free but a precompiled
+            // script plugin does not, and the compiler's fallback candidate for the
+            // unresolved call is a stdlib `DeepRecursiveFunction` overload whose
+            // error has nothing to do with the real problem.
+            //
+            // `localDevices`, not `devices` — `devices` is the polymorphic container
+            // AGP itself populates (it is where a *registered* device ends up, local
+            // or otherwise); `localDevices` is the typed `ManagedVirtualDevice`
+            // container a build actually declares into.
+            if (localDevices.findByName("pixel6Api34") == null) {
+                localDevices.create("pixel6Api34") {
+                    device = "Pixel 6"
+                    apiLevel = 34
+                    systemImageSource = "aosp-atd"
+                }
+            }
+            if (localDevices.findByName("apiFloorPixel2") == null) {
+                localDevices.create("apiFloorPixel2") {
+                    device = "Pixel 2"
+                    apiLevel = 26
+                    systemImageSource = "aosp"
+                }
+            }
+            if (groups.findByName("omnideckSweep") == null) {
+                groups.create("omnideckSweep") {
+                    targetDevices.add(allDevices.getByName("pixel6Api34"))
+                    targetDevices.add(allDevices.getByName("apiFloorPixel2"))
+                }
+            }
+        }
     }
 }
 
