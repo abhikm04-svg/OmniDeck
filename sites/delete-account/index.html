@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delete your account and data — OmniDeck</title>
+<meta name="description" content="How to delete your OmniDeck account and the data associated with it.">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<!--
+  OD-716, and the page architecture.md §19.2 commits to: Play requires account
+  deletion to be requestable from the web, by someone who does not have the app
+  installed. Keep this page reachable at exactly /delete-account/ — that path is
+  cited in the internal spec and goes in the Play Console listing.
+
+  The request route here is email, deliberately: it is a route that works today.
+  When the self-service web endpoint lands, add it *above* the email route rather
+  than replacing it, so a link already submitted to Play keeps working.
+
+  The in-app route below describes the Privacy Centre, which OD-702 builds. Check
+  the wording against the screen as shipped before submission — a deletion page
+  that names a menu path the app does not have is a review rejection.
+-->
+<body>
+<header>
+    <a class="wordmark" href="/">OmniDeck</a>
+</header>
+
+<main>
+    <h1>Delete your account and data</h1>
+    <p class="updated">Last updated: 29 August 2026</p>
+
+    <p class="lede">
+        This page is for the OmniDeck Android app (<code>com.omnideck.shell</code>), published
+        by {{ENTITY}}. You do not need the app installed to make a request.
+    </p>
+
+    <h2>If you have the app installed</h2>
+    <p>
+        Open <em>Settings &rarr; Privacy &rarr; Delete account</em>. You will be asked to
+        confirm, and the deletion begins immediately.
+    </p>
+
+    <h2>If you do not have the app installed</h2>
+    <p>
+        Email <a href="mailto:{{CONTACT_EMAIL}}?subject=Account%20deletion%20request">{{CONTACT_EMAIL}}</a>
+        from the address you signed up with, with the subject <em>Account deletion request</em>.
+    </p>
+    <p>
+        Sending from your registered address is how we confirm the request is yours. If you no
+        longer have access to that address, say so in the message and we will verify another
+        way rather than refusing the request.
+    </p>
+    <p>
+        We confirm receipt within 5 days and complete the deletion within 30 days. You will
+        get a confirmation when it is done.
+    </p>
+
+    <h2>What gets deleted</h2>
+    <ul>
+        <li>Your account record, email address and profile.</li>
+        <li>Your entitlements and licence assignments.</li>
+        <li>Data held by every OmniDeck feature you have used. Deletion fans out to each installed module, which erases its own storage; nothing is left behind because a module was uninstalled first.</li>
+        <li>Data stored on your device by the app, including its encryption keys.</li>
+        <li>Analytics and diagnostic records linked to your account identifier.</li>
+    </ul>
+
+    <h2>What is kept, and why</h2>
+    <table>
+        <tr><th>Data</th><th>Kept for</th><th>Why</th></tr>
+        <tr>
+            <td>Purchase, invoice and tax records</td>
+            <td>As long as the law requires</td>
+            <td>Financial record-keeping obligations we cannot waive</td>
+        </tr>
+        <tr>
+            <td>Aggregated, de-identified usage counts</td>
+            <td>Indefinitely</td>
+            <td>No longer linked to you or your device, and cannot be re-identified</td>
+        </tr>
+        <tr>
+            <td>Records of the deletion itself</td>
+            <td>Up to 2 years</td>
+            <td>Evidence that we honoured your request</td>
+        </tr>
+        <tr>
+            <td>Encrypted backups</td>
+            <td>Up to 35 days</td>
+            <td>Expire on the ordinary backup rotation; not restored to re-create a deleted account</td>
+        </tr>
+    </table>
+
+    <h2>Deleting some data without deleting your account</h2>
+    <p>
+        You do not have to close your account to remove data. In the app,
+        <em>Settings &rarr; Privacy</em> lets you turn off analytics and diagnostics, reset
+        your analytics identifier, and remove an individual feature together with everything
+        it stored. Uninstalling a feature erases that feature's data and leaves the rest of
+        your account intact.
+    </p>
+
+    <h2>Questions</h2>
+    <p>
+        <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a> &mdash; see also our
+        <a href="/privacy/">privacy policy</a>.
+    </p>
+</main>
+
+<footer>
+    <nav>
+        <a href="/privacy/">Privacy</a>
+        <a href="/delete-account/">Delete account</a>
+        <a href="/terms/">Terms</a>
+    </nav>
+    <p>&copy; 2026 {{ENTITY}}</p>
+</footer>
+</body>
+</html>
