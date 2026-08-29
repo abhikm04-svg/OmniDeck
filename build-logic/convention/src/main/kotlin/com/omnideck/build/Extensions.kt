@@ -143,6 +143,12 @@ internal fun Project.configureTestDependencies() = dependencies {
 internal const val DYNAMIC_MODULES_PROPERTY = "omnideck.dynamicModules"
 
 /**
+ * `-Pomnideck.testBuildType=benchmark`. Which build type androidTest is compiled for
+ * (OD-304) — AGP allows exactly one, and defaults it to the unminified debug build.
+ */
+internal const val TEST_BUILD_TYPE_PROPERTY = "omnideck.testBuildType"
+
+/**
  * The Gradle configuration a feature module publishes its discovery descriptor on,
  * and the Shell resolves for the on-demand ones.
  *

@@ -101,6 +101,25 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 vectorDrawables.useSupportLibrary = true
             }
 
+            // OD-304. AGP builds androidTest for one build type only, and defaults it
+            // to debug — so the instrumented tests never see a minified app, which is
+            // where the entry point's keep rule is the difference between a module
+            // loading and a ClassNotFoundException. `benchmark` is release's shape
+            // (R8, shrunk resources, not debuggable) signed with the debug key, so it
+            // installs without release credentials:
+            //
+            //   ./gradlew :app:connectedBenchmarkAndroidTest -Pomnideck.testBuildType=benchmark
+            //
+            // A property rather than a permanent switch: the debug run stays the
+            // default because it is faster and catches everything except this.
+            testBuildType = providers.gradleProperty(TEST_BUILD_TYPE_PROPERTY).getOrElse("debug")
+
+            // AGP minifies the androidTest APK alongside the app, so the *test*
+            // dependencies have to satisfy R8 as well. Kept in their own file so
+            // nothing needed to make Truth and JUnit link can ever be mistaken for a
+            // rule that relaxes the shipped app.
+            defaultConfig.testProguardFiles(file("proguard-test-rules.pro"))
+
             dynamicFeatures += dynamic.map { ":modules:$it" }.toSet()
 
             sourceSets.getByName("main").assets.srcDir(stageDescriptors)
