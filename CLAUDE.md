@@ -319,6 +319,43 @@ work, the contract is missing something; raise it as an SDK issue rather than ad
 dependency. Kernel unit tests use Robolectric; JUnit4 + Truth + Turbine + MockK +
 coroutines-test are applied to every project by the convention plugins.
 
+Instrumented tests are compiled for **one** build type, and AGP defaults it to `debug` — so
+they never see a minified app unless told to (OD-304). The keep rule for a module's
+reflectively-loaded `ModuleEntryPoint` only matters there:
+
+```bash
+./gradlew :app:connectedBenchmarkAndroidTest -Pomnideck.testBuildType=benchmark
+```
+
+`benchmark` is release's shape signed with the debug key. R8 also processes the *test* APK in
+that mode, which is what `app/proguard-test-rules.pro` exists for — test-only rules, deliberately
+not in `proguard-rules.pro` where they could be mistaken for something the shipped app needs.
+
+## What is not verified here, and why
+
+Three things Phase 3 needs are blocked on resources this checkout does not have. Each is
+recorded so the next person does not re-derive the blockage, or worse, quietly assume it away.
+
+- **No Play Console account exists** (OD-313). Nothing has been submitted to an Internal
+  Testing track, so the acquisition path has never run against a real Play client: the split
+  download, the `REQUIRES_USER_CONFIRMATION` consent dialog (OD-302), `deferredUninstall`
+  reclaiming space (OD-307) and both In-App Update flows (OD-309) are verified only against
+  their fakes and their seams. Each of those seams — `SplitInstaller`, `AppUpdateSource` —
+  exists precisely so the decision logic above it is testable without one. **The M2 exit gate
+  is not met and must not be recorded as met.**
+- **No backend** (OD-306, OD-310). The Catalog serves what the device discovered, not a served
+  catalog, and the kill switch reads a local flag rather than a pushed one. `ModuleManifest` is
+  already `@Serializable` and `FeatureFlagService` is already the interface modules use, so both
+  are a swap behind the capability boundary rather than a redesign — but until BE-101 exists
+  there is nothing to swap to, and an uninstalled module is still listed by its id because its
+  display name lives in code that is not on the device.
+- **The reference device refuses ADB installs.** The attached HyperOS phone returns
+  `INSTALL_FAILED_USER_RESTRICTED` for every install, by hand as well as through Gradle, which
+  blocks every `connected*AndroidTest` and the macrobenchmarks with it. It also will not deliver
+  the `profileinstaller` broadcast (see above), so `startupWithBaselineProfile` cannot run there
+  either (OD-318). A Gradle Managed Device is the fix for both and for OD-303's API 26→36 sweep;
+  until then, the on-device half of OD-303, OD-304, OD-307, OD-316 and OD-317 is unrun.
+
 ## Conventions
 
 - Branches: `<ticket>-short-description` off `main`, e.g. `od-009-lint-rules`; squash-merge.
