@@ -1,5 +1,5 @@
 # Cloudflare Pages reads this file from the build output directory and applies it to
-# matching responses. It is not a Gradle or Android artifact — see sites/README.md.
+# matching responses. It is not a Gradle or Android artifact — see docs/web-origin.md.
 #
 # The CSP is this strict because the site genuinely has no JavaScript, no forms and no
 # third-party resources. Anything added later that needs one of those must relax the

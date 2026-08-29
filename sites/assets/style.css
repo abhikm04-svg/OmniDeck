@@ -3,7 +3,7 @@
  *
  * One stylesheet for every page. No JavaScript anywhere on this site, which is
  * what lets the Content-Security-Policy in `_headers` stay at `default-src 'none'`
- * — see sites/README.md.
+ * — see docs/web-origin.md.
  */
 
 :root {
