@@ -12,6 +12,7 @@ import com.omnideck.sdk.ModuleState
 import com.omnideck.sdk.Route
 import com.omnideck.sdk.capability.NavResult
 import com.omnideck.sdk.capability.TelemetryService
+import com.omnideck.shell.navigation.ModuleShortcuts
 import com.omnideck.shell.navigation.ShellDestinations
 import com.omnideck.shell.navigation.ShellNavigationSink
 import com.omnideck.shell.navigation.ShellRoutes
@@ -50,6 +51,7 @@ class ShellViewModel @Inject constructor(
     private val telemetry: TelemetryService,
     private val navigationSink: ShellNavigationSink,
     private val shellDestinations: ShellDestinations,
+    private val shortcuts: ModuleShortcuts,
     val destinations: MutableDestinationRegistry,
 ) : ViewModel() {
 
@@ -75,6 +77,10 @@ class ShellViewModel @Inject constructor(
         viewModelScope.launch {
             lifecycle.modules.collect { runtimes ->
                 _state.update { it.copy(modules = runtimes.values.map(::toTile)) }
+                // Republished on every state change rather than once at startup: the
+                // launcher caches these, so a shortcut into a module that has since
+                // been removed or quarantined would outlive it (OD-314).
+                shortcuts.publish(runtimes.values)
             }
         }
         viewModelScope.launch {

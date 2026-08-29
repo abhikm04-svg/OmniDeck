@@ -22,6 +22,7 @@ import com.omnideck.sdk.SemVer
 import com.omnideck.sdk.SemVerRange
 import com.omnideck.sdk.TeamRef
 import com.omnideck.sdk.capability.NavResult
+import com.omnideck.shell.navigation.ModuleShortcuts
 import com.omnideck.shell.navigation.ShellDestinations
 import com.omnideck.shell.navigation.ShellNavigationSink
 import com.omnideck.shell.navigation.ShellRoutes
@@ -203,12 +204,20 @@ class ShellViewModelTest {
         assertThat(vm.state.value.message).isNull()
     }
 
+    /**
+     * Mocked rather than real: publishing shortcuts needs a `Context` and a launcher,
+     * and neither says anything about the navigation this class is here to test. That
+     * the *right* modules are offered is asserted in ModuleShortcutsTest.
+     */
+    private val shortcuts = mockk<ModuleShortcuts>(relaxed = true)
+
     private fun viewModel() = ShellViewModel(
         lifecycle = lifecycle,
         router = router,
         telemetry = telemetry,
         navigationSink = sink,
         shellDestinations = ShellDestinations(),
+        shortcuts = shortcuts,
         destinations = destinations,
     )
 
