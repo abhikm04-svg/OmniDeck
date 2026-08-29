@@ -8,6 +8,8 @@ import com.omnideck.kernel.services.PermissionRequester
 import com.omnideck.shell.ActivityConfirmationLauncher
 import com.omnideck.shell.ActivityPermissionRequester
 import com.omnideck.shell.navigation.ShellNavigationSink
+import com.omnideck.shell.update.AppUpdateSource
+import com.omnideck.shell.update.PlayAppUpdateSource
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -37,6 +39,14 @@ abstract class ShellModule {
     @Binds
     @Singleton
     abstract fun bindConfirmationLauncher(impl: ActivityConfirmationLauncher): ConfirmationLauncher
+
+    /**
+     * OD-309. The seam over Play's update manager, for the same reason `SplitInstaller`
+     * has one: the policy above it is testable, this is not.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindAppUpdateSource(impl: PlayAppUpdateSource): AppUpdateSource
 
     companion object {
 

@@ -16,6 +16,8 @@ import com.omnideck.shell.navigation.ModuleShortcuts
 import com.omnideck.shell.navigation.ShellDestinations
 import com.omnideck.shell.navigation.ShellNavigationSink
 import com.omnideck.shell.navigation.ShellRoutes
+import com.omnideck.shell.update.HostUpdater
+import com.omnideck.shell.update.UpdateOffer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,6 +54,7 @@ class ShellViewModel @Inject constructor(
     private val navigationSink: ShellNavigationSink,
     private val shellDestinations: ShellDestinations,
     private val shortcuts: ModuleShortcuts,
+    private val updater: HostUpdater,
     val destinations: MutableDestinationRegistry,
 ) : ViewModel() {
 
@@ -120,6 +123,26 @@ class ShellViewModel @Inject constructor(
      * Router makes after a failed acquisition land in exactly the same place.
      */
     fun onModuleStatus(id: ModuleId) = viewModelScope.launch { navigate(ShellRoutes.moduleStatus(id)) }
+
+    /**
+     * Offers Play's update flow for a module gated on the host version (OD-309).
+     *
+     * Immediate rather than flexible, and only here: the user is looking at a screen
+     * that says the app is too old for something they just tried to open, so a
+     * background download that lets them carry on lets them carry on doing nothing.
+     * Everywhere else an update is routine and must not block.
+     */
+    fun onUpdateHost() = viewModelScope.launch {
+        when (val offer = updater.check(blocking = true)) {
+            is UpdateOffer.Available -> if (!updater.start(offer)) {
+                _state.update { it.copy(message = "Update could not be started. Try the Play Store.") }
+            }
+            // Nothing on offer: Play has no newer build, or this device cannot reach
+            // it. Saying so beats a button that appears to do nothing.
+            UpdateOffer.None ->
+                _state.update { it.copy(message = "No update is available for this device yet.") }
+        }
+    }
 
     /** Retry from the module status screen, after a failed install or a cleared quarantine. */
     fun onRetryModule(id: ModuleId) = viewModelScope.launch {

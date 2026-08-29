@@ -26,6 +26,7 @@ import com.omnideck.shell.navigation.ModuleShortcuts
 import com.omnideck.shell.navigation.ShellDestinations
 import com.omnideck.shell.navigation.ShellNavigationSink
 import com.omnideck.shell.navigation.ShellRoutes
+import com.omnideck.shell.update.HostUpdater
 import com.omnideck.testing.FakeTelemetryService
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -211,6 +212,9 @@ class ShellViewModelTest {
      */
     private val shortcuts = mockk<ModuleShortcuts>(relaxed = true)
 
+    /** Play is not reachable from a unit test; the update flow is asserted in HostUpdaterTest. */
+    private val updater = mockk<HostUpdater>(relaxed = true)
+
     private fun viewModel() = ShellViewModel(
         lifecycle = lifecycle,
         router = router,
@@ -218,6 +222,7 @@ class ShellViewModelTest {
         navigationSink = sink,
         shellDestinations = ShellDestinations(),
         shortcuts = shortcuts,
+        updater = updater,
         destinations = destinations,
     )
 

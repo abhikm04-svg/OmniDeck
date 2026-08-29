@@ -46,6 +46,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.play.feature.delivery)
+    // OD-309. In `:app` and not the kernel: this updates the *host*, which is a fact
+    // about the application rather than a capability a module is granted.
+    implementation(libs.play.app.update)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.startup)

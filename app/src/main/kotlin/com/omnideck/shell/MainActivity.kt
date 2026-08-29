@@ -20,6 +20,7 @@ import com.omnideck.sdk.capability.Router
 import com.omnideck.shell.navigation.ExternalRoutes
 import com.omnideck.shell.navigation.ShellNavHost
 import com.omnideck.shell.navigation.ShellNavigationSink
+import com.omnideck.shell.update.UpdateFlowStarterHolder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -43,6 +44,8 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var permissionRequesterHolder: ActivityPermissionRequester
 
     @Inject lateinit var confirmationLauncherHolder: ActivityConfirmationLauncher
+
+    @Inject lateinit var updateFlowStarterHolder: UpdateFlowStarterHolder
 
     private var pendingPermission: ((PermissionBroker.PermissionResult) -> Unit)? = null
 
@@ -75,6 +78,17 @@ class MainActivity : ComponentActivity() {
         pendingConfirmation = null
         callback?.invoke(result.resultCode == RESULT_OK)
     }
+
+    /**
+     * OD-309. Play's own update UI, launched the same way as its consent dialog.
+     *
+     * The result is deliberately ignored: a user who declines a flexible update has
+     * declined it, and a completed immediate update restarts the app, so there is no
+     * state here worth carrying forward either way.
+     */
+    private val updateLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult(),
+    ) { }
 
     /**
      * OD-303. `SplitCompat.install()` in the Application makes a freshly installed
@@ -117,6 +131,14 @@ class MainActivity : ComponentActivity() {
                 }
                 continuation.invokeOnCancellation { pendingConfirmation = null }
             }
+        }
+
+        // OD-309. Play renders its own update UI; all the Activity supplies is the
+        // ActivityResult launcher to render it from, exactly as for the split-install
+        // consent dialog above. `runCatching` because Play rejects a flow it did not
+        // offer, and a refusal is reported to the caller rather than crashing here.
+        updateFlowStarterHolder.attach { manager, info, options ->
+            runCatching { manager.startUpdateFlowForResult(info, updateLauncher, options) }.isSuccess
         }
 
         setContent {
