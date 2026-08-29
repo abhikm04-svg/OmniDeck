@@ -1,0 +1,11 @@
+# Indexing is off while this site is served from a temporary origin.
+#
+# OD-321's reasoning applies to search results as well as to shared links: every
+# durable reference to a host we intend to leave becomes either a broken link or a
+# redirect we serve forever. Play fetches the privacy policy URL directly and does
+# not consult this file, so nothing that has to work is affected.
+#
+# Delete this file when the permanent domain lands.
+
+User-agent: *
+Disallow: /

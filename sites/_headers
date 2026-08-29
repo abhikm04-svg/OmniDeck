@@ -1,0 +1,13 @@
+# Cloudflare Pages reads this file from the build output directory and applies it to
+# matching responses. It is not a Gradle or Android artifact — see docs/web-origin.md.
+#
+# The CSP is this strict because the site genuinely has no JavaScript, no forms and no
+# third-party resources. Anything added later that needs one of those must relax the
+# policy deliberately here, rather than discovering at runtime that it was blocked.
+
+/*
+  Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()
