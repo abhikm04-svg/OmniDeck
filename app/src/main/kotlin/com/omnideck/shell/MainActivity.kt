@@ -9,14 +9,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.lifecycleScope
 import com.google.android.play.core.splitcompat.SplitCompat
 import com.omnideck.designsystem.theme.OmniDeckTheme
 import com.omnideck.kernel.loader.ConfirmationLauncher
 import com.omnideck.kernel.services.PermissionRequester
 import com.omnideck.sdk.capability.PermissionBroker
-import com.omnideck.sdk.capability.Router
 import com.omnideck.shell.navigation.ExternalRoutes
 import com.omnideck.shell.navigation.ShellNavHost
 import com.omnideck.shell.navigation.ShellNavigationSink
@@ -37,9 +36,14 @@ import kotlin.coroutines.resume
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject lateinit var navigationSink: ShellNavigationSink
+    /**
+     * The same instance the composition gets from `hiltViewModel()`: both resolve
+     * against this Activity as the ViewModelStoreOwner, so a route handed over here
+     * is navigated by the very ViewModel that owns the back stack.
+     */
+    private val shell: ShellViewModel by viewModels()
 
-    @Inject lateinit var router: Router
+    @Inject lateinit var navigationSink: ShellNavigationSink
 
     @Inject lateinit var permissionRequesterHolder: ActivityPermissionRequester
 
@@ -165,7 +169,11 @@ class MainActivity : ComponentActivity() {
      */
     private fun handleDeepLink(intent: Intent?) {
         val route = ExternalRoutes.from(intent?.data) ?: return
-        lifecycleScope.launch { router.navigate(route) }
+        // Through the ViewModel, not the Router directly: it holds the route until
+        // discovery has run. On a cold start this method fires from onCreate, before
+        // the lifecycle manager knows any module exists, and the Router would resolve
+        // it to nothing (OD-204, OD-314).
+        shell.onExternalRoute(route)
     }
 
     override fun onDestroy() {

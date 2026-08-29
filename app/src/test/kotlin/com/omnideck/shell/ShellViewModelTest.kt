@@ -33,11 +33,13 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -69,6 +71,28 @@ class ShellViewModelTest {
 
     @After
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun `a deep link that arrives before discovery is held, not dropped`() = runTest {
+        // Every external entry point — a notification tap, a launcher shortcut, an
+        // omnideck:// link — cold-starts the app, and MainActivity hands the route
+        // over from onCreate. The Router resolves a module route by asking the
+        // lifecycle manager who owns the host, and that map is empty until discover()
+        // returns, so a route navigated immediately resolved to nothing.
+        val slow = CompletableDeferred<Unit>()
+        coEvery { lifecycle.discover() } coAnswers { slow.await() }
+        val viewModel = viewModel()
+
+        viewModel.onExternalRoute(Route("omnideck://alpha/home"))
+
+        // Nothing yet: the Shell is not ready and the route is still waiting.
+        coVerify(exactly = 0) { router.navigate(any()) }
+
+        slow.complete(Unit)
+        runCurrent()
+
+        coVerify { router.navigate(Route("omnideck://alpha/home")) }
+    }
 
     @Test
     fun `the grid is whatever was discovered, in whatever state it is in`() = runTest {
