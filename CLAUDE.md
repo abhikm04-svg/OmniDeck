@@ -240,10 +240,19 @@ Two tickets, and they are not the same shape:
 
 - **OD-716** — stand up a public web origin for the privacy policy and account-deletion
   page. **Blocks Play submission** independently of deep linking, and a *free* origin is
-  fine (Firebase Hosting Spark, Cloudflare Pages, GitHub Pages) because these are pages,
-  not identity. A policy page can move and only a link rots.
+  fine because these are pages, not identity: a policy page can move and only a link
+  rots. The pages live in **`sites/`** and deploy to Cloudflare Pages (2026-08-29).
 - **OD-321** — publish `assetlinks.json` and restore the filter. Needs a **permanent**
   origin. Re-scoped from Phase 3 to the Phase 7 launch gate on 2026-08-29.
+
+`sites/` is static HTML and is **not** part of the Gradle build — no convention plugin
+sees it, and the only gate that touches it is Spotless's `misc` format on `README.md`.
+It deploys as one Cloudflare Pages project whose *root directory* is set to `sites`, with
+no build command, which is what keeps the rest of the repository out of the deployment.
+`sites/README.md` has the dashboard settings, the `{{PLACEHOLDER}}` tokens that must all
+be replaced before submission, and the standing rule that follows from the split above:
+**never add `.well-known/assetlinks.json` or `/go/` pages there** while the origin is a
+`*.pages.dev` subdomain. Policy pages may move; shared links may not.
 
 `scripts/assetlinks.py` does both halves of OD-321's mechanics: `generate --fingerprint
 <SHA256>` emits the file (the **Play App Signing** certificate's SHA-256 from Play

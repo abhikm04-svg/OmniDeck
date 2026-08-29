@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy policy — OmniDeck</title>
+<meta name="description" content="How OmniDeck handles your data.">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<!--
+  OD-716. This is the deployable privacy policy. Its *substance* is still a draft:
+  OD-702 ("Privacy policy, per-module disclosures, ToS, in-app legal centre") carries
+  the legal review, and the visible draft notice below is removed at that sign-off,
+  not before. Placeholders in double braces must all be replaced first — see
+  sites/README.md.
+-->
+<body>
+<header>
+    <a class="wordmark" href="/">OmniDeck</a>
+</header>
+
+<main>
+    <h1>Privacy policy</h1>
+    <p class="updated">Last updated: 29 August 2026</p>
+
+    <div class="notice">
+        <p>
+            <strong>Pre-release draft.</strong> OmniDeck has not been published yet. This
+            policy describes how the app is built to handle data; it has not been through
+            legal review and may change before release.
+        </p>
+    </div>
+
+    <p>
+        This policy explains what OmniDeck collects, why, and what control you have over it.
+        It covers the OmniDeck Android app published by {{ENTITY}} and the services behind it.
+    </p>
+
+    <h2>The short version</h2>
+    <ul>
+        <li>Analytics and diagnostics are <strong>off until you turn them on</strong>, and you choose them by purpose rather than all at once.</li>
+        <li>OmniDeck does not sell your personal data, and does not use it for advertising.</li>
+        <li>OmniDeck does not use an advertising identifier unless a feature you install declares and justifies one.</li>
+        <li>You can <a href="/delete-account/">delete your account and data</a> without installing the app.</li>
+    </ul>
+
+    <h2>How OmniDeck is put together</h2>
+    <p>
+        OmniDeck is a host app that loads <em>feature modules</em>. Modules are delivered and
+        updated separately from the app itself, and you install only the ones you use.
+    </p>
+    <p>
+        This matters for privacy, because each module is isolated rather than trusted:
+    </p>
+    <ul>
+        <li>
+            Every module declares, in a manifest that ships with it, the capabilities it needs
+            and the categories of data it handles. The app enforces that declaration at
+            runtime &mdash; a module asking for something it did not declare is refused, not
+            trusted.
+        </li>
+        <li>
+            Each module gets its own storage area, its own encryption keys and its own
+            identity. One module cannot read another module&rsquo;s data or act under another
+            module&rsquo;s name.
+        </li>
+        <li>
+            The data-safety information in our store listing is generated from those module
+            manifests rather than written by hand, so what is disclosed and what the code
+            does cannot drift apart unnoticed.
+        </li>
+    </ul>
+    <p>
+        Where a specific module handles data beyond what is described here, its own disclosure
+        is shown in the app before you install it.
+    </p>
+
+    <h2>What OmniDeck collects</h2>
+
+    <h3>Diagnostics and usage data &mdash; only if you opt in</h3>
+    <p>
+        Crash reports and usage analytics are disabled by default. If you enable them, you
+        enable them per purpose, and you can withdraw any of them at any time in
+        <em>Settings &rarr; Privacy</em>. When enabled, these records carry:
+    </p>
+    <ul>
+        <li>which module produced the event, so a fault can be attributed to the feature that caused it;</li>
+        <li>app version, device model, OS version and locale;</li>
+        <li>crash and error diagnostics, including stack traces.</li>
+    </ul>
+    <p>
+        Events are passed through a redaction step before they leave the device, which strips
+        values that look like personal data. Analytics identifiers are rotating and resettable,
+        and are not your account identifier.
+    </p>
+
+    <h3>Account information &mdash; only if you sign in</h3>
+    <p>
+        Parts of OmniDeck work without an account. If you do sign in, sign-in happens with our
+        identity provider in a browser tab rather than in a form inside the app, so the app
+        never handles your password. We store the account identifier, the email address
+        associated with it, and what you are entitled to use. Session tokens are held in
+        hardware-backed storage on your device.
+    </p>
+
+    <h3>Purchases</h3>
+    <p>
+        Purchases of digital goods are processed by Google Play. We receive confirmation that
+        a purchase is valid and what it entitles you to. We never receive your card or payment
+        details.
+    </p>
+
+    <h3>What OmniDeck does not do</h3>
+    <ul>
+        <li>It does not sell or rent personal data.</li>
+        <li>It does not build advertising profiles, and shows no third-party advertising.</li>
+        <li>It does not download and run code from outside Google Play.</li>
+        <li>It does not collect a list of the other apps installed on your device.</li>
+    </ul>
+
+    <h2>Permissions</h2>
+    <p>
+        Permissions are requested by the app on behalf of a module, at the point the feature
+        needs them, and only if that module declared the permission up front. Denying a
+        permission disables that feature and nothing else. Sensitive permissions are avoided
+        in the main app by design; where a feature genuinely requires one, it is delivered as
+        a separate app you install deliberately.
+    </p>
+
+    <h2>How data is stored and protected</h2>
+    <ul>
+        <li>Data on your device is stored in a per-module area, encrypted with keys held in the Android Keystore. Keys never leave the device.</li>
+        <li>Traffic to our services uses HTTPS with certificate pinning.</li>
+        <li>Server-side data is encrypted at rest, and access is limited to what is needed to operate the service.</li>
+    </ul>
+
+    <h2>Who we share data with</h2>
+    <p>
+        We share personal data only with providers that run the service on our behalf &mdash;
+        hosting, crash reporting and analytics processing &mdash; and only what they need to
+        perform that function. They may not use it for their own purposes. We also disclose
+        data where the law requires it.
+    </p>
+
+    <h2>How long we keep it</h2>
+    <table>
+        <tr><th>Data</th><th>Retained</th></tr>
+        <tr><td>Crash and diagnostic reports</td><td>Up to 90 days</td></tr>
+        <tr><td>Usage analytics</td><td>Up to 14 months, in aggregated form</td></tr>
+        <tr><td>Account record and entitlements</td><td>Until you delete your account</td></tr>
+        <tr><td>Purchase and tax records</td><td>As long as the law requires, after deletion</td></tr>
+    </table>
+
+    <h2>Your choices</h2>
+    <ul>
+        <li><strong>Consent.</strong> Turn analytics and diagnostics on or off per purpose, at any time, in <em>Settings &rarr; Privacy</em>.</li>
+        <li><strong>Access and correction.</strong> Ask us for a copy of your data, or ask us to correct it.</li>
+        <li><strong>Deletion.</strong> <a href="/delete-account/">Delete your account and data</a>, in the app or from this site.</li>
+        <li><strong>Reset your analytics identifier</strong> at any time, in the same screen.</li>
+    </ul>
+    <p>
+        Depending on where you live, you may have further rights over your personal data,
+        including the right to object to processing and to complain to your data-protection
+        authority. Write to us at the address below and we will honour them.
+    </p>
+
+    <h2>Children</h2>
+    <p>
+        OmniDeck is not directed at children under 13, and we do not knowingly collect their
+        personal data. If you believe a child has given us personal data, write to us and we
+        will delete it.
+    </p>
+
+    <h2>International transfers</h2>
+    <p>
+        Our service providers may process data in countries other than yours. Where that
+        happens, transfers are made under safeguards recognised by the relevant law.
+    </p>
+
+    <h2>Changes to this policy</h2>
+    <p>
+        We will update this page when the app changes, and the date at the top will change
+        with it. Material changes are announced in the app before they take effect.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+        {{ENTITY}}<br>
+        <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>
+    </p>
+</main>
+
+<footer>
+    <nav>
+        <a href="/privacy/">Privacy</a>
+        <a href="/delete-account/">Delete account</a>
+        <a href="/terms/">Terms</a>
+    </nav>
+    <p>&copy; 2026 {{ENTITY}}</p>
+</footer>
+</body>
+</html>
