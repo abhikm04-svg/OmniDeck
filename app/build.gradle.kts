@@ -69,5 +69,12 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.hilt.testing)
+    // OD-319. `WorkManagerInitializer` is removed from the manifest (see the node
+    // below, and `WorkSchedulerImpl`'s own doc), which is exactly right for a Hilt
+    // worker factory in the shipped app and exactly wrong for an instrumented test
+    // that never installs one: the first test to reach a `WorkManager` call —
+    // quarantine cancelling a module's scheduled work — found this by throwing
+    // "WorkManager is not initialized properly", not by a task ever running wrong.
+    androidTestImplementation(libs.androidx.work.testing)
     kspAndroidTest(libs.hilt.compiler)
 }

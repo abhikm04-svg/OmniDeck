@@ -22,8 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.omnideck.designsystem.theme.Spacing
@@ -42,7 +44,7 @@ fun ModuleTile(title: String, subtitle: String, state: TileState, onClick: () ->
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .clearAndSetSemantics { contentDescription = "$title. $subtitle. ${state.accessibilityLabel}" },
+            .clearAndSetSemantics { tileSemantics(title, subtitle, state, enabled) },
         colors = CardDefaults.cardColors(
             containerColor = tileContainerColor(state),
             contentColor = tileContentColor(state),
@@ -97,6 +99,24 @@ fun ModuleTile(title: String, subtitle: String, state: TileState, onClick: () ->
             }
         }
     }
+}
+
+/**
+ * `clearAndSetSemantics` replaces the whole merged semantics node, `Card`'s own
+ * included — so without the explicit [disabled], a quarantined or installing tile is
+ * unclickable (`enabled` on `Card` still gates `onClick` itself) but TalkBack has no
+ * way to know that; it announces the tile as an ordinary enabled control. Found on a
+ * Gradle Managed Device (OD-317/OD-319): a test asserting the tile is not enabled
+ * failed even though tapping it already did nothing.
+ */
+private fun SemanticsPropertyReceiver.tileSemantics(
+    title: String,
+    subtitle: String,
+    state: TileState,
+    enabled: Boolean,
+) {
+    contentDescription = "$title. $subtitle. ${state.accessibilityLabel}"
+    if (!enabled) disabled()
 }
 
 /**

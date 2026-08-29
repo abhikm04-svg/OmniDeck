@@ -51,6 +51,28 @@ plug-and-play fitness test — its unit-level half runs in `:app:testDebugUnitTe
 ./gradlew :app:connectedDebugAndroidTest              # OD-212, scaffold -> load -> render
 ```
 
+**Gradle Managed Devices** (`configureManagedDevices`, `build-logic/.../Extensions.kt`) are the
+reproducible alternative to whatever phone is plugged in — AGP owns the whole lifecycle (image,
+boot, install, teardown) from a device definition in source control, so there is no OEM install
+policy or broadcast policy to fight (see "What is not verified here" below for what that cost on
+a physical unit). Same tests, no device attached:
+
+```bash
+./gradlew :platform:kernel:pixel6Api34DebugAndroidTest     # reference device (OD-317)
+./gradlew :platform:kernel:apiFloorPixel2DebugAndroidTest  # minSdk floor, API 26 (OD-303)
+./gradlew :app:pixel6Api34DebugAndroidTest
+./gradlew :app:omnideckSweepGroupDebugAndroidTest           # both devices, one invocation
+```
+
+First run downloads a system image per device (`aosp-atd` for `pixel6Api34`, plain `aosp` for
+`apiFloorPixel2` — no ATD image exists that far back); every run after that reuses it. `minSdk`
+26 needs `android.experimental.testOptions.managedDevices.allowOldApiLevelDevices=true`
+(`gradle.properties`) — AGP declines API ≤26 GMDs by default, for image-staleness reasons that do
+not apply to a device that never talks to a network of its own. Verified end to end in this repo
+2026-08-29: all ten `SecureStoreImplTest` cases (the Keystore-backed suite this section opens
+with) and all of `PlugAndPlayInstrumentedTest` pass on `pixel6Api34`, cold, from an empty image
+cache, in about three minutes.
+
 Performance work also needs a device, and is deliberately outside the ordinary build:
 
 ```bash
@@ -350,38 +372,89 @@ not in `proguard-rules.pro` where they could be mistaken for something the shipp
 
 ## What is not verified here, and why
 
-Three things Phase 3 needs are blocked on resources this checkout does not have. Each is
-recorded so the next person does not re-derive the blockage, or worse, quietly assume it away.
+**2026-08-29 — the device half moved to a Gradle Managed Device.** The HyperOS phone's two
+failures below (`INSTALL_FAILED_USER_RESTRICTED` on a Gradle session install, and a refused
+`profileinstaller` broadcast) are properties of that phone, not of "a device" — a GMD has
+neither, because AGP owns the whole install path itself. Confirmed on `pixel6Api34`: all 10
+`SecureStoreImplTest` cases, all of `PlugAndPlayInstrumentedTest`, all 10 kernel tests on
+`apiFloorPixel2` (API 26, the actual `minSdk` floor OD-303 asks about), and a new
+`QuarantineContainmentInstrumentedTest` (OD-319, below) all pass. What a GMD does **not** fix is
+listed below it — it is still a software emulator, and it still has no Play Store.
 
-- **No Play Console account exists** (OD-313). Nothing has been submitted to an Internal
-  Testing track, so the acquisition path has never run against a real Play client: the split
-  download, the `REQUIRES_USER_CONFIRMATION` consent dialog (OD-302), `deferredUninstall`
-  reclaiming space (OD-307) and both In-App Update flows (OD-309) are verified only against
-  their fakes and their seams. Each of those seams — `SplitInstaller`, `AppUpdateSource` —
-  exists precisely so the decision logic above it is testable without one. **The M2 exit gate
-  is not met and must not be recorded as met.**
-- **No backend** (OD-306, OD-310). The Catalog serves what the device discovered, not a served
-  catalog, and the kill switch reads a local flag rather than a pushed one. `ModuleManifest` is
-  already `@Serializable` and `FeatureFlagService` is already the interface modules use, so both
-  are a swap behind the capability boundary rather than a redesign — but until BE-101 exists
-  there is nothing to swap to, and an uninstalled module is still listed by its id because its
-  display name lives in code that is not on the device.
-- **Gradle cannot install on the reference device**, though `adb install` can. The attached
-  HyperOS phone refuses AGP's *session* install (`install-create` / `install-commit`) with
-  `INSTALL_FAILED_USER_RESTRICTED` while accepting a streamed `adb install -r -t` of the same
-  APK seconds later. Every `connected*AndroidTest` task therefore reports 0 tests, and the
-  macrobenchmarks with them. Installing by hand and driving instrumentation with
-  `adb shell am instrument -w <pkg>.test/com.omnideck.shell.OmniDeckTestRunner` works around it.
-  The phone also will not deliver the `profileinstaller` broadcast (see above), so
-  `startupWithBaselineProfile` cannot run there at all (OD-318). A Gradle Managed Device is the
-  fix for both, and for OD-303's API 26→36 sweep.
+- **No Play Console account exists** (OD-313), still — a GMD does not change this; it has no
+  Play Store at all (`aosp`/`aosp-atd` images), so `SplitInstallManager`'s real download and
+  consent-dialog path (OD-302), `deferredUninstall` (OD-307) and both In-App Update flows
+  (OD-309) remain verified only against their fakes and seams (`SplitInstaller`,
+  `AppUpdateSource`). Flipping `-Pomnideck.dynamicModules=notes,finance` and running on a GMD
+  installs and runs the app fine — Play Core's local-testing fallback for a non-Play-installed
+  build — but `GeneratedModuleRegistry` covers bundled modules only (OD-202), so the two
+  existing device tests (`PlugAndPlayInstrumentedTest`, `QuarantineContainmentInstrumentedTest`)
+  read an empty list in that mode and fail on that, not on anything about split loading. Neither
+  test was written to be delivery-mode-aware; making them so, or writing a
+  `ModuleLifecycleManager.modules`-driven equivalent, is unclaimed follow-up work, not something
+  this note should be read as having closed. **The M2 exit gate is still not met.**
+- **No backend** (OD-306, OD-310), still — a GMD is a client-side fix and this is a
+  server-side gap. The Catalog serves what the device discovered, not a served catalog, and the
+  kill switch reads a local flag rather than a pushed one. `ModuleManifest` is already
+  `@Serializable` and `FeatureFlagService` is already the interface modules use, so both are a
+  swap behind the capability boundary rather than a redesign — but until BE-101 exists there is
+  nothing to swap to.
+- **A GMD is still a software emulator** for macrobenchmark's purposes: `pixel6Api34` reports
+  `cpuLocked: false`, the same as the local emulator this section used to warn about, and for
+  the same reason — no benchmark image offers a locked clock. `startupWithBaselineProfile` now
+  *runs* there (OD-318 was never able to say even that on the HyperOS phone), and reports
+  `timeToInitialDisplayMs` median 306 ms against 291 ms with no compilation (10 iterations
+  each) — but a 5% gap between "baseline-profiled" and "nothing compiled" is noise, not a
+  result, on an unlocked clock, and this is not a number to hold the Shell to. OD-317's other
+  half — a *trustworthy* number — and OD-318 stay open until either a physical reference device
+  or Firebase Test Lab (`architecture.md` §18's actual named mechanism for this) is available.
+  What OD-317 asked for that a GMD *can* settle — "define the reference device" — is settled:
+  it is `pixel6Api34`, in source control, not a phone nobody can point to.
 - **The minified instrumented-test APK does not start.** With `-Pomnideck.testBuildType=benchmark`
   the app minifies correctly but the *test* process dies in `OmniDeckTestRunner` on Hilt's test
   Application, which R8 strips along with the `Hilt_*` superclass it generates. `proguard-test-rules.pro`
   keeps both and it is still not enough. **OD-304 was answered without it**: the minified APK was
   installed and launched directly, and both modules discover, activate and render — including a
   module's `Degraded` banner, so `ModuleInitResult` propagates through a build R8 has been over.
-  That is the gate bullet "release-build module loading verified — not just debug".
+  That is the gate bullet "release-build module loading verified — not just debug". Confirmed
+  again on `pixel6Api34` via `-Pomnideck.testBuildType=benchmark` on the *debug* androidTest
+  runner against the app's `benchmark` build type (see the CI `on-device` job).
+- **OD-319 — "kill the module process" restated as containment, and demonstrated.** Bundled and
+  split modules still share the Shell process; there is nothing to kill until `processIsolation`
+  modules (§12.6, Phase 6) or a satellite (Phase 5) exist. `QuarantineContainmentInstrumentedTest`
+  drives the real path instead — flips the same `FeatureFlagService` kill switch production code
+  reads, waits for the already-running `watchKillSwitches()` collector to react — and asserts the
+  tile goes non-interactive with the reason shown, the Shell stays up, and every other module's
+  tile is untouched. Writing it surfaced two real bugs, both fixed: `ModuleLifecycleManager.quarantine`
+  calls into `WorkManager` to cancel scheduled work, which was never initialized in an instrumented
+  test (`androidTestImplementation(libs.androidx.work.testing)` +
+  `WorkManagerTestInitHelper.initializeTestWorkManager` in `@Before`, matching the manifest's
+  deliberate removal of `WorkManagerInitializer`); and `ModuleTile`'s `clearAndSetSemantics`
+  silently dropped the `Card`'s own disabled-state semantics, so a quarantined tile was already
+  unclickable but TalkBack had no way to know that — fixed by setting `disabled()` explicitly
+  inside the same block (`ModuleTile.kt`).
+- **OD-315 — Notes has no sync target, still, and this was deliberately not attempted here.**
+  `notes.sync.endpoint` (`NotesComponent.SYNC_ENDPOINT_FLAG`) is unset, so Notes stays
+  `Degraded` by design; `NotesSync`, `NotesSyncTransport`, `RoomOutbox` and `NotesSyncScheduler`
+  all exist and are unit-tested (`NotesSyncTransportTest` already covers the wire protocol
+  against a `MockWebServer`), but nothing has driven them from a device. This is a genuinely
+  separate ~5-day ticket (`implementation_plan.md` OD-315), not a device-tooling gap, and it
+  should not be rushed alongside one. The decision the ticket asked for first: **amend the M1
+  bullet to mean the `MockWebServer` fixture**, not stand up a Firestore-backed stub — nothing
+  in this repo owns a real backend yet (OD-306/OD-310, above), and building one just to satisfy
+  this bullet would be exactly the "swap to nowhere" those two already describe. The on-device
+  demonstration itself is specified, not built: an `:app` instrumented test would need to (1)
+  set `notes.sync.endpoint` to `http://127.0.0.1:<port>` *before* the module first activates —
+  `NotesComponent.build()` reads the flag once, unlike the kill switch's live `Flow` — with a
+  `MockWebServer` the test starts (it runs in-process on the device, so no host/emulator network
+  aliasing is needed); (2) drive `NotesListScreen`/`NoteEditorScreen` by their existing content
+  descriptions (`"New note"`, `"Waiting to sync"`) rather than reach into Room, which `:app`'s
+  test has no compile-time access to; (3) force `NotesSyncScheduler`'s `WorkManager` job to run
+  synchronously the same way `QuarantineContainmentInstrumentedTest` now initializes test
+  WorkManager, rather than wait on its own backoff; (4) assert the outbox drain, a 409 conflict,
+  and a delete/tombstone the same way `NotesSyncTransportTest` already asserts them at unit
+  level, but by watching `"Waiting to sync"` appear and disappear rather than an in-process
+  transport call.
 
 ## Conventions
 
