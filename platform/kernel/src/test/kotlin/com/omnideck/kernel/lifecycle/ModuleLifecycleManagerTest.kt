@@ -414,6 +414,54 @@ class ModuleLifecycleManagerTest {
     }
 
     @Test
+    fun `a purged split Play has not reclaimed yet is flagged as awaiting cleanup`() = runTest {
+        // OD-307. `deferredUninstall` is a request, not an action: the split is still
+        // on the device afterwards, usually for hours. Recording that is what stops the
+        // Catalog offering a download of a stated size that will never happen — tapping
+        // install short-circuits on `isInstalled` and reopens the module at once, which
+        // on a device read as the removal having done nothing.
+        val fixture = LifecycleFixture(provider = ScriptedProvider())
+        fixture.manager.discover()
+        fixture.manager.activate(moduleId())
+
+        fixture.manager.purge(moduleId(), PurgeScope.ALL)
+
+        assertThat(fixture.runtime().state).isEqualTo(ModuleState.ADVERTISED)
+        assertThat(fixture.runtime().awaitingPlayCleanup).isTrue()
+    }
+
+    @Test
+    fun `a provider that really does uninstall leaves nothing awaiting cleanup`() = runTest {
+        // The other half of the same fact, so the flag tracks reality rather than
+        // being pinned true for every provider. A bundled module — and one day a
+        // satellite — removes on request, and there is then nothing to explain.
+        val fixture = LifecycleFixture(provider = ScriptedProvider(uninstallIsImmediate = true))
+        fixture.manager.discover()
+        fixture.manager.activate(moduleId())
+
+        fixture.manager.purge(moduleId(), PurgeScope.ALL)
+
+        assertThat(fixture.runtime().awaitingPlayCleanup).isFalse()
+    }
+
+    @Test
+    fun `adding a module back before Play reclaims it clears the pending removal`() = runTest {
+        // The instant-reinstall path, which is legitimate: the code never left, so the
+        // module comes straight back with the data gone. What must not survive is the
+        // flag, or the tile keeps apologising for a removal the user has undone.
+        val fixture = LifecycleFixture(provider = ScriptedProvider())
+        fixture.manager.discover()
+        fixture.manager.activate(moduleId())
+        fixture.manager.purge(moduleId(), PurgeScope.ALL)
+        assertThat(fixture.runtime().awaitingPlayCleanup).isTrue()
+
+        fixture.manager.activate(moduleId())
+
+        assertThat(fixture.runtime().state).isEqualTo(ModuleState.ACTIVE)
+        assertThat(fixture.runtime().awaitingPlayCleanup).isFalse()
+    }
+
+    @Test
     fun `a cache purge keeps the module installed and does not uninstall it`() = runTest {
         val module = ScriptedModule()
         val fixture = LifecycleFixture(provider = ScriptedProvider(module = module))

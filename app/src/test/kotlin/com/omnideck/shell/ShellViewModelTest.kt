@@ -121,6 +121,29 @@ class ShellViewModelTest {
     }
 
     @Test
+    fun `a module removed but not yet reclaimed by Play does not advertise a download`() = runTest {
+        // OD-307. The split is still on the device, so tapping this fetches nothing and
+        // reopens the module at once. A tile reading "4.2 MB · tap to install" would be
+        // stating a figure that never materialises, which is what made a removal look
+        // like it had done nothing at all.
+        runtimes.value = mapOf(
+            id("alpha") to runtime("alpha", ModuleState.ADVERTISED).copy(awaitingPlayCleanup = true),
+        )
+
+        assertThat(viewModel().state.value.modules.single().tileState).isEqualTo(TileState.AwaitingCleanup)
+    }
+
+    @Test
+    fun `a module that was never installed still advertises its download size`() = runTest {
+        // The ordinary ADVERTISED case must keep its size, or the flag has simply
+        // replaced one wrong label with another.
+        runtimes.value = mapOf(id("alpha") to runtime("alpha", ModuleState.ADVERTISED))
+
+        assertThat(viewModel().state.value.modules.single().tileState)
+            .isInstanceOf(TileState.Available::class.java)
+    }
+
+    @Test
     fun `a quarantined module's tile carries the reason the user will read`() = runTest {
         runtimes.value = mapOf(
             id("alpha") to runtime("alpha", ModuleState.QUARANTINED).copy(reason = "Disabled by the team."),

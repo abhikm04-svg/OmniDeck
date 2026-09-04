@@ -356,8 +356,13 @@ private fun CatalogActions(
 
 internal fun ModuleCategory.label(): String = name.lowercase().replace('_', ' ').replaceFirstChar(Char::titlecase)
 
-private fun CatalogEntry.installLabel(): String =
-    if (downloadBytes <= 0) "Install" else "Install (${downloadBytes.asMegabytes()})"
+private fun CatalogEntry.installLabel(): String = when {
+    // Removed, but Play has not reclaimed the split yet (OD-307): the code is still on
+    // the device, so this fetches nothing and quoting a size would be a false promise.
+    awaitingPlayCleanup -> "Add back"
+    downloadBytes <= 0 -> "Install"
+    else -> "Install (${downloadBytes.asMegabytes()})"
+}
 
 /** Spoken instead of the bar, which TalkBack otherwise announces as a bare percentage. */
 private fun CatalogEntry.progressDescription(): String = when {
