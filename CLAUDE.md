@@ -284,14 +284,23 @@ Two rules govern what may go in `sites/`, and both fail quietly rather than loud
 - **Never add `.well-known/assetlinks.json` or `/go/` pages there** while the origin is a
   `*.pages.dev` subdomain. Policy pages may move; shared links may not.
 
-`scripts/assetlinks.py` does both halves of OD-321's mechanics: `generate --fingerprint
-<SHA256>` emits the file (the **Play App Signing** certificate's SHA-256 from Play
-Console, not the upload key — Play re-signs), and `verify` must exit 0 before the filter
-goes back. It checks what a browser spot-check hides: HTTPS with no redirect (Android
-does not follow them here), the `handle_all_urls` relation, the applicationId, and the
-fingerprint. It is not a CI gate on purpose — it asserts an origin we do not control —
-but it does run against any host, so the flow can be rehearsed on a throwaway origin
-without publishing links anyone can share.
+`scripts/assetlinks.py` does both halves of OD-321's mechanics:
+`--host <origin> generate --fingerprint <SHA256>` emits the file (the **Play App
+Signing** certificate's SHA-256 from Play Console, not the upload key — Play re-signs),
+and `--host <origin> verify` must exit 0 before the filter goes back. It checks what a
+browser spot-check hides: HTTPS with no redirect (Android does not follow them here),
+the `handle_all_urls` relation, the applicationId, and the fingerprint. It is not a CI
+gate on purpose — it asserts an origin we do not control — but it does run against any
+host, so the flow can be rehearsed on a throwaway origin without publishing links anyone
+can share.
+
+`--host` is **required and has no default**. It used to default to `omnideck.app`, so a
+bare `verify` sent live requests to a domain registered to someone else and `generate`
+printed "Publish this at https://omnideck.app/..." as an instruction — worst precisely
+at the moment someone does OD-321, having just bought a *different* domain. The
+fingerprint is a required flag for the same reason: hardcoding it would let it drift
+silently from whatever key Play actually holds, and a stale fingerprint breaks App Links
+in a way that only shows up in production.
 
 ### The isolation boundary
 
