@@ -390,18 +390,34 @@ neither, because AGP owns the whole install path itself. Confirmed on `pixel6Api
 `QuarantineContainmentInstrumentedTest` (OD-319, below) all pass. What a GMD does **not** fix is
 listed below it — it is still a software emulator, and it still has no Play Store.
 
-- **No Play Console account exists** (OD-313), still — a GMD does not change this; it has no
-  Play Store at all (`aosp`/`aosp-atd` images), so `SplitInstallManager`'s real download and
-  consent-dialog path (OD-302), `deferredUninstall` (OD-307) and both In-App Update flows
-  (OD-309) remain verified only against their fakes and seams (`SplitInstaller`,
-  `AppUpdateSource`). Flipping `-Pomnideck.dynamicModules=notes,finance` and running on a GMD
-  installs and runs the app fine — Play Core's local-testing fallback for a non-Play-installed
-  build — but `GeneratedModuleRegistry` covers bundled modules only (OD-202), so the two
-  existing device tests (`PlugAndPlayInstrumentedTest`, `QuarantineContainmentInstrumentedTest`)
-  read an empty list in that mode and fail on that, not on anything about split loading. Neither
-  test was written to be delivery-mode-aware; making them so, or writing a
-  `ModuleLifecycleManager.modules`-driven equivalent, is unclaimed follow-up work, not something
-  this note should be read as having closed. **The M2 exit gate is still not met.**
+- **Play is no longer a gap** (OD-011, OD-313, OD-303 — closed 2026-09-04). The app exists as
+  `com.omnideck.shell`, Play App Signing is enrolled (upload key held locally, app signing key
+  held by Google), and version 1 (0.1.0) is live on the Internal Testing track as a signed AAB
+  built with `-Pomnideck.dynamicModules=notes,finance`. Verified against a real Play client on a
+  real device, which nothing before this had ever done:
+  - **On-demand delivery is real.** Play reports **1.67 MB** for a new install against a 3.33 MB
+    base module — it is excluding both splits and serving one ABI/density. A bundle that had
+    silently shipped its modules install-time (the failure `<dist:on-demand/>` exists to prevent)
+    would report a larger number, so this figure *is* the evidence.
+  - **OD-303's actual claim holds:** the split downloaded and the module rendered **without an
+    app restart**. That is what `SplitCompat.install` in `attachBaseContext` buys, and its
+    absence is the documented #1 split-install bug. Confirmed on one device at one API level;
+    the API 26 floor is covered separately by `apiFloorPixel2` for module *loading*, not for
+    split *install*, which needs a Play Store the GMD images do not have.
+  - Pre-flight checks worth repeating on any future bundle, since each failure is invisible in
+    the console: `jarsigner -verify` says `jar verified`; the AAB contains `base/`, `notes/`,
+    `finance/` rather than `base/` alone; each split manifest greps for `on-demand` and not
+    `install-time`; and `base/resources.pb` carries `omnideck_module_title_*` for every split,
+    which is what Play reads to name a download before that split exists.
+
+  Still unexercised against real Play, so do not record these as met: **OD-302's
+  `REQUIRES_USER_CONFIRMATION` branch** never fired — the splits are 50–76 KB, far below the size
+  or metered-network thresholds Play requires confirmation for, so that path remains fake-only
+  and is awkward to trigger deliberately at this size. **OD-307** (`deferredUninstall`, purge
+  fan-out) and **OD-309** (both In-App Update flows, which need a second version code on the
+  track) are simply untested. **The M2 exit gate is closer but still not met** — it also wants
+  uninstall/reinstall data purge, a server-driven kill switch (OD-310, no backend), and the SDK
+  frozen and tagged `sdk-1.0.0`, which has not happened.
 - **No backend** (OD-306, OD-310), still — a GMD is a client-side fix and this is a
   server-side gap. The Catalog serves what the device discovered, not a served catalog, and the
   kill switch reads a local flag rather than a pushed one. `ModuleManifest` is already
