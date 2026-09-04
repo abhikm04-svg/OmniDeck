@@ -49,6 +49,11 @@ data class CatalogEntry(
     val androidPermissions: Set<String> = emptySet(),
     val dataCategories: Set<DataCategory> = emptySet(),
     val entitlement: EntitlementPolicy? = null,
+    /**
+     * Removed by the user, with Play yet to reclaim the split (OD-307). Tapping
+     * install reopens it immediately and downloads nothing.
+     */
+    val awaitingPlayCleanup: Boolean = false,
 ) {
     /** Nothing to download and nothing to reclaim: it is inside the base APK. */
     val isBundled: Boolean get() = delivery == DeliveryKind.BUNDLED
@@ -233,6 +238,7 @@ class CatalogViewModel @Inject constructor(
             androidPermissions = manifest?.androidPermissions.orEmpty(),
             dataCategories = manifest?.dataCategories.orEmpty(),
             entitlement = manifest?.entitlement,
+            awaitingPlayCleanup = runtime.awaitingPlayCleanup,
         )
     }
 }

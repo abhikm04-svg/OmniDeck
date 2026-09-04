@@ -130,6 +130,21 @@ internal class ScriptedProvider(
     var module: OmniModule = ScriptedModule(),
     private val installFlow: Flow<InstallProgress> = flowOf(InstallProgress.Installed),
     private val loadFailure: Throwable? = null,
+    /**
+     * Whether `uninstall` takes effect at once (OD-307).
+     *
+     * False is the Play feature-split default and the reason this parameter exists.
+     * `SplitInstallManager` offers only `deferredUninstall`: it records the request and
+     * reclaims the space on its own schedule, so `isInstalled` keeps answering true
+     * long afterwards. A fake that removed the split synchronously modelled a Play that
+     * does not exist, and the lifecycle manager's "the module is gone now" assumption
+     * went unchallenged all the way to a device, where removing a module and tapping
+     * install brought it straight back with no download.
+     *
+     * Set true for a provider that genuinely removes on request — a bundled module in a
+     * test, or a future satellite uninstall.
+     */
+    private val uninstallIsImmediate: Boolean = false,
 ) : ModuleProvider {
 
     var loadCount = 0
@@ -142,6 +157,12 @@ internal class ScriptedProvider(
 
     override suspend fun uninstall(id: ModuleId) {
         uninstalled += id
+        if (uninstallIsImmediate) installed = false
+    }
+
+    /** Play finally reclaiming the split, at whatever later moment a test wants. */
+    fun playReclaimsTheSplit() {
+        installed = false
     }
 
     override suspend fun load(descriptor: ModuleDescriptor): OmniModule {

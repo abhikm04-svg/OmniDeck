@@ -62,6 +62,25 @@ data class ModuleRuntime(
      * rather than on every gated module.
      */
     val hostUpdateWouldHelp: Boolean = false,
+    /**
+     * True after the user removed this module while its code is still on the device
+     * (OD-307).
+     *
+     * Play's only uninstall for a feature split is `deferredUninstall`: it takes the
+     * request and reclaims the space on its own schedule — typically when the device
+     * is idle and charging, sometimes hours later, never synchronously and with no
+     * callback when it happens. So immediately after a removal the truth is split in
+     * two: the module's *data* is gone for certain, and its *code* is still installed.
+     *
+     * Recording that is what stops the two lies this used to tell. The state went to
+     * [ModuleState.ADVERTISED] unconditionally, which claims "not installed" about a
+     * split that demonstrably is — and the tile then offered a download of a stated
+     * size that would never happen, because `install()` short-circuits on
+     * `isInstalled()` and returns immediately. A user who removed a module and tapped
+     * install again saw it reappear instantly, which reads as the removal having done
+     * nothing at all.
+     */
+    val awaitingPlayCleanup: Boolean = false,
 )
 
 /** What put a module into [ModuleState.QUARANTINED]. */
@@ -230,6 +249,11 @@ class ModuleLifecycleManager @Inject constructor(
                                 firstFailureAtMs = 0,
                                 quarantineCause = null,
                                 reason = (result as? ModuleInitResult.Degraded)?.reason,
+                                // Back in service, so there is no pending removal to
+                                // explain any more — whether Play reclaimed the split
+                                // and it was fetched again, or the user changed their
+                                // mind before Play got round to it.
+                                awaitingPlayCleanup = false,
                             )
                         }
                     }
@@ -337,8 +361,21 @@ class ModuleLifecycleManager @Inject constructor(
             instances.remove(id)
             destinations.removeAll(id)
             capabilities.removeAll(id)
-            providerFor(_modules.value.getValue(id).descriptor)?.uninstall(id)
-            update(id) { it.copy(state = ModuleState.ADVERTISED, manifest = null) }
+
+            val provider = providerFor(_modules.value.getValue(id).descriptor)
+            provider?.uninstall(id)
+            // Asked afterwards, and believed. `deferredUninstall` is a request, not an
+            // action: for a Play feature split this is almost always still true here,
+            // and pretending otherwise is what made "Remove" look like it did nothing.
+            val stillOnDevice = provider?.isInstalled(id) ?: false
+
+            update(id) {
+                it.copy(
+                    state = ModuleState.ADVERTISED,
+                    manifest = null,
+                    awaitingPlayCleanup = stillOnDevice,
+                )
+            }
         } else {
             update(id) { it.copy(state = ModuleState.INSTALLED) }
         }

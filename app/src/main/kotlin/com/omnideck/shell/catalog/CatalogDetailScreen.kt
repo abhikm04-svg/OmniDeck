@@ -262,11 +262,17 @@ private fun ModuleState.isUsable(): Boolean = this == ModuleState.ACTIVE ||
     this == ModuleState.INSTALLED ||
     this == ModuleState.SUSPENDED
 
-private fun CatalogEntry.detailInstallLabel(): String =
-    if (downloadBytes <= 0) "Install" else "Install (${downloadBytes.asMegabytes()})"
+private fun CatalogEntry.detailInstallLabel(): String = when {
+    awaitingPlayCleanup -> "Add back"
+    downloadBytes <= 0 -> "Install"
+    else -> "Install (${downloadBytes.asMegabytes()})"
+}
 
 private fun CatalogEntry.downloadDisclosure(): String = when {
     isBundled -> "Nothing to download — included with OmniDeck"
+    // The honest answer for a module the user removed minutes ago: its data is gone,
+    // its code is not, and when Play reclaims the space is Play's decision alone.
+    awaitingPlayCleanup -> "Still on this device — Google Play frees the space later"
     downloadBytes > 0 -> downloadBytes.asMegabytes()
     else -> "Size not known until the module is available"
 }

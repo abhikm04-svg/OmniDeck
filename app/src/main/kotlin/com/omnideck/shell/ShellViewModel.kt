@@ -237,6 +237,11 @@ class ShellViewModel @Inject constructor(
                 ModuleState.ACTIVE, ModuleState.DEGRADED, ModuleState.INSTALLED, ModuleState.SUSPENDED ->
                     TileState.Ready
 
+                // Removed, but Play has not reclaimed the split yet (OD-307). Offering
+                // a download size here would state a figure that never materialises:
+                // the code is still on the device, so tapping reopens it at once.
+                ModuleState.ADVERTISED if runtime.awaitingPlayCleanup -> TileState.AwaitingCleanup
+
                 ModuleState.ADVERTISED ->
                     TileState.Available((manifest?.estimatedDownloadBytes ?: 0L) / BYTES_IN_MB)
 

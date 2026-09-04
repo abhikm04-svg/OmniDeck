@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.Card
@@ -63,6 +64,8 @@ fun ModuleTile(title: String, subtitle: String, state: TileState, onClick: () ->
                     when (state) {
                         is TileState.Installing -> CircularProgressIndicator(Modifier.size(24.dp))
                         is TileState.Available -> Icon(Icons.Default.Download, contentDescription = null)
+                        // A clock, not a download arrow: tapping this fetches nothing.
+                        is TileState.AwaitingCleanup -> Icon(Icons.Default.Schedule, contentDescription = null)
                         is TileState.Gated -> Icon(Icons.Default.Lock, contentDescription = null)
                         is TileState.Quarantined -> Icon(Icons.Default.Warning, contentDescription = null)
                         is TileState.Ready -> Icon(Icons.Default.Widgets, contentDescription = null)
@@ -143,10 +146,23 @@ sealed interface TileState {
     data class Gated(val reason: String) : TileState
     data class Quarantined(val reason: String) : TileState
 
+    /**
+     * Removed by the user, but its code is still on the device (OD-307).
+     *
+     * Distinct from [Available] because the two behave differently in the one way the
+     * user can see: tapping this reopens the module immediately with no download, so a
+     * tile advertising a download size here would be stating a figure that never
+     * materialises. Play's `deferredUninstall` reclaims the space on its own schedule,
+     * which is a fact about Play and not something the Shell can hurry along or
+     * predict, so the tile says so rather than guessing at a time.
+     */
+    data object AwaitingCleanup : TileState
+
     val captionOrNull: String?
         get() = when (this) {
             is Ready -> null
             is Available -> "%.1f MB · tap to install".format(downloadMb)
+            is AwaitingCleanup -> "Removed · Play frees the space later"
             is Installing -> "Installing…"
             is Gated -> reason
             is Quarantined -> reason
@@ -156,6 +172,7 @@ sealed interface TileState {
         get() = when (this) {
             is Ready -> "Installed"
             is Available -> "Not installed, tap to install"
+            is AwaitingCleanup -> "Removed. Data deleted. Google Play frees the download later. Tap to add it back"
             is Installing -> "Installing"
             is Gated -> "Locked: $reason"
             is Quarantined -> "Unavailable: $reason"
