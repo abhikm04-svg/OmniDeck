@@ -37,6 +37,7 @@ import com.omnideck.sdk.EntitlementPolicy
 import com.omnideck.sdk.ModuleId
 import com.omnideck.sdk.ModuleState
 import com.omnideck.shell.ShellViewModel
+import com.omnideck.shell.navigation.LocalShellViewModel
 
 /**
  * One module's detail page (OD-305).
@@ -54,7 +55,7 @@ import com.omnideck.shell.ShellViewModel
 @Composable
 fun CatalogDetailRoute(
     moduleId: ModuleId,
-    shell: ShellViewModel = hiltViewModel(),
+    shell: ShellViewModel = LocalShellViewModel.current,
     catalog: CatalogViewModel = hiltViewModel(),
 ) {
     val entries by catalog.entries.collectAsState()

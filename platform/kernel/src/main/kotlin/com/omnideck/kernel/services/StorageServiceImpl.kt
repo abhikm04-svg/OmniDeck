@@ -11,7 +11,9 @@ import com.omnideck.sdk.ModuleId
 import com.omnideck.sdk.PurgeScope
 import com.omnideck.sdk.capability.StorageService
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -34,7 +36,6 @@ class StorageServiceImpl(
 ) : StorageService {
 
     private val databases = ConcurrentHashMap<String, RoomDatabase>()
-    private val dataStores = ConcurrentHashMap<String, DataStore<Preferences>>()
 
     private val moduleRoot: File
         get() = File(context.filesDir, "modules/${moduleId.value}").apply { mkdirs() }
@@ -54,16 +55,48 @@ class StorageServiceImpl(
             .build()
     } as T
 
-    override fun preferences(name: String): DataStore<Preferences> = dataStores.getOrPut(name) {
-        PreferenceDataStoreFactory.create(
-            scope = CoroutineScope(dispatchers.io + SupervisorJob()),
-            produceFile = { File(moduleRoot, "datastore/$name.preferences_pb").apply { parentFile?.mkdirs() } },
-        )
+    override fun preferences(name: String): DataStore<Preferences> {
+        val file = File(moduleRoot, "datastore/$name.preferences_pb").apply { parentFile?.mkdirs() }
+        return ActiveDataStores.open(file) { PreferenceDataStoreFactory.create(scope = it, produceFile = { file }) }
     }
 
     override fun filesDir(): File = File(moduleRoot, "files").apply { mkdirs() }
 
     override fun cacheDir(): File = moduleCache
+
+    /**
+     * DataStores, keyed by file, for the whole process.
+     *
+     * DataStore's contract is one instance per file *per process* — a second one on the
+     * same path throws. That cannot be honoured by a cache living on
+     * [StorageServiceImpl], because the factory drops and rebuilds that object whenever
+     * a module is purged and re-initialised, so the second incarnation would build a
+     * second DataStore over a file the first one still holds. Keying on the resolved
+     * file, above the object lifetime, is what makes the rule hold.
+     *
+     * Each entry owns the scope it was created with so releasing can cancel it — the
+     * only way the file is genuinely let go.
+     */
+    private object ActiveDataStores {
+
+        private val open = ConcurrentHashMap<String, Entry>()
+
+        private class Entry(val store: DataStore<Preferences>, val scope: CoroutineScope)
+
+        fun open(file: File, create: (CoroutineScope) -> DataStore<Preferences>): DataStore<Preferences> =
+            open.getOrPut(file.absolutePath) {
+                val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+                Entry(create(scope), scope)
+            }.store
+
+        /** Cancels and forgets every DataStore whose file sits under [root]. */
+        fun releaseUnder(root: File) {
+            val prefix = root.absolutePath
+            open.keys
+                .filter { it == prefix || it.startsWith(prefix + File.separator) }
+                .forEach { key -> open.remove(key)?.scope?.cancel() }
+        }
+    }
 
     override suspend fun usageBytes(): Long = withContext(dispatchers.io) {
         moduleRoot.walkBottomUp().sumOf { if (it.isFile) it.length() else 0L } +
@@ -78,13 +111,21 @@ class StorageServiceImpl(
 
             PurgeScope.SESSION -> {
                 moduleCache.deleteRecursively()
+                // Released before the files go, for the same reason as ALL below.
+                ActiveDataStores.releaseUnder(File(moduleRoot, "datastore"))
                 File(moduleRoot, "datastore").deleteRecursively()
             }
 
             PurgeScope.ALL -> {
                 databases.values.forEach { runCatching { it.close() } }
                 databases.clear()
-                dataStores.clear()
+                // Cancelling, not just forgetting. Dropping the reference leaves the
+                // DataStore's own coroutine alive and still holding the file, so the
+                // next `preferences()` call builds a second one on the same path and
+                // DataStore throws "There are multiple DataStores active for the same
+                // file" — on a device, after a remove-and-reinstall, in a module that
+                // had done nothing wrong.
+                ActiveDataStores.releaseUnder(moduleRoot)
                 moduleRoot.deleteRecursively()
                 moduleCache.deleteRecursively()
             }

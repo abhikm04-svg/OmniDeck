@@ -48,6 +48,7 @@ import com.omnideck.sdk.ModuleCategory
 import com.omnideck.sdk.ModuleId
 import com.omnideck.sdk.ModuleState
 import com.omnideck.shell.ShellViewModel
+import com.omnideck.shell.navigation.LocalShellViewModel
 
 /**
  * The Catalog (OD-305) — where a user acquires and removes modules.
@@ -61,7 +62,7 @@ import com.omnideck.shell.ShellViewModel
  * from what was found rather than from the full enum, for the same reason.
  */
 @Composable
-fun CatalogRoute(shell: ShellViewModel = hiltViewModel(), catalog: CatalogViewModel = hiltViewModel()) {
+fun CatalogRoute(shell: ShellViewModel = LocalShellViewModel.current, catalog: CatalogViewModel = hiltViewModel()) {
     val state by catalog.state.collectAsState()
 
     CatalogScreen(

@@ -19,10 +19,13 @@ import com.omnideck.shell.navigation.ShellRoutes
 import com.omnideck.shell.update.HostUpdater
 import com.omnideck.shell.update.UpdateOffer
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -65,7 +68,24 @@ class ShellViewModel @Inject constructor(
     /** Live module state, for the degraded banner and the status screen. */
     val runtimes: StateFlow<Map<ModuleId, ModuleRuntime>> = lifecycle.modules
 
-    private val backStack = ArrayDeque<Route>()
+    /**
+     * What the NavController should do next.
+     *
+     * An intent stream rather than a call into the controller, because every decision
+     * worth testing happens before it: whether a route resolves, whether the module
+     * needs acquiring first, whether the answer is the status screen instead. Those
+     * live here and are exercised by `ShellViewModelTest` with no Compose at all; the
+     * controller is then a dumb consumer of the verdict.
+     *
+     * Buffered and conflated-free: a dropped navigation is a tap that did nothing.
+     */
+    private val intents = Channel<NavIntent>(Channel.BUFFERED)
+    val navigationIntents: Flow<NavIntent> = intents.receiveAsFlow()
+
+    sealed interface NavIntent {
+        data class Open(val route: Route) : NavIntent
+        data object Back : NavIntent
+    }
 
     init {
         viewModelScope.launch {
@@ -174,8 +194,19 @@ class ShellViewModel @Inject constructor(
         // no. Unless someone says so, the caller's flow never completes and whatever
         // it was gating waits for ever.
         leaving?.correlationId?.let(router::abandon)
-        _state.update { it.copy(currentRoute = backStack.removeLastOrNull()) }
+        intents.trySend(NavIntent.Back)
     }
+
+    /**
+     * Where the user actually is, reported by the NavController.
+     *
+     * The Shell no longer keeps its own back stack — the controller's entries are the
+     * stack, because each one is a `ViewModelStoreOwner` and that is what gives a
+     * destination's ViewModels a lifecycle. This mirror exists only so the decisions
+     * that need the current route ([onBack]'s correlation-id abandonment, the back
+     * handler's enablement) stay here rather than leaking into the composition.
+     */
+    fun onCurrentDestinationChanged(route: Route?) = _state.update { it.copy(currentRoute = route) }
 
     fun dismissMessage() = _state.update { it.copy(message = null) }
 
@@ -193,8 +224,7 @@ class ShellViewModel @Inject constructor(
     }
 
     private fun push(route: Route) {
-        _state.value.currentRoute?.let(backStack::addLast)
-        _state.update { it.copy(currentRoute = route) }
+        intents.trySend(NavIntent.Open(route))
     }
 
     private fun toTile(runtime: ModuleRuntime): ModuleTileModel {
