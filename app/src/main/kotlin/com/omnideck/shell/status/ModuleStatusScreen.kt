@@ -11,7 +11,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.omnideck.designsystem.component.ErrorSurface
 import com.omnideck.designsystem.component.PrimaryButton
 import com.omnideck.designsystem.theme.Spacing
@@ -20,6 +19,7 @@ import com.omnideck.kernel.lifecycle.QuarantineCause
 import com.omnideck.sdk.ModuleId
 import com.omnideck.sdk.ModuleState
 import com.omnideck.shell.ShellViewModel
+import com.omnideck.shell.navigation.LocalShellViewModel
 
 /**
  * The contained failure surface (OD-208, QA-6).
@@ -30,7 +30,7 @@ import com.omnideck.shell.ShellViewModel
  * disappears is not that, which is why `NavResult.Unavailable` routes here.
  */
 @Composable
-fun ModuleStatusRoute(moduleId: ModuleId, shell: ShellViewModel = hiltViewModel()) {
+fun ModuleStatusRoute(moduleId: ModuleId, shell: ShellViewModel = LocalShellViewModel.current) {
     val runtimes by shell.runtimes.collectAsState()
     val runtime = runtimes[moduleId]
 

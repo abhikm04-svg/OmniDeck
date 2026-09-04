@@ -33,10 +33,14 @@ import com.omnideck.designsystem.layout.ReadableColumn
 import com.omnideck.designsystem.layout.rememberWindowWidthClass
 import com.omnideck.designsystem.theme.Spacing
 import com.omnideck.shell.ShellViewModel
+import com.omnideck.shell.navigation.LocalShellViewModel
 import java.util.Locale
 
 @Composable
-fun SettingsRoute(viewModel: SettingsViewModel = hiltViewModel(), shell: ShellViewModel = hiltViewModel()) {
+fun SettingsRoute(
+    viewModel: SettingsViewModel = hiltViewModel(),
+    shell: ShellViewModel = LocalShellViewModel.current,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     SettingsScreen(

@@ -37,6 +37,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -147,7 +148,7 @@ class ShellViewModelTest {
         val vm = viewModel()
         vm.onModuleClicked(id("alpha"))
 
-        assertThat(vm.state.value.currentRoute).isEqualTo(ShellRoutes.moduleStatus(id("alpha")))
+        assertThat(vm.openIntent()).isEqualTo(ShellRoutes.moduleStatus(id("alpha")))
     }
 
     @Test
@@ -162,24 +163,28 @@ class ShellViewModelTest {
     }
 
     @Test
-    fun `back pops to the previous destination`() = runTest {
+    fun `a routed navigation is handed to the controller as an open intent`() = runTest {
+        // The Shell no longer keeps its own back stack: the NavController's entries are
+        // the stack, because each is a ViewModelStoreOwner and that is what gives a
+        // destination's ViewModels a lifecycle (OD-205). What is assertable here is the
+        // decision — where to go — and that is what this checks. Where the stack ends
+        // up after a pop is the controller's own behaviour and is covered on a device
+        // by ShellBackStackInstrumentedTest.
         val vm = viewModel()
+
         sink.navigate(Route("omnideck://alpha/one"))
-        sink.navigate(Route("omnideck://alpha/two"))
 
-        vm.onBack()
-
-        assertThat(vm.state.value.currentRoute).isEqualTo(Route("omnideck://alpha/one"))
+        assertThat(vm.openIntent()).isEqualTo(Route("omnideck://alpha/one"))
     }
 
     @Test
-    fun `back from the first destination returns to the home grid`() = runTest {
+    fun `back asks the controller to pop rather than mutating state itself`() = runTest {
         val vm = viewModel()
-        sink.navigate(Route("omnideck://alpha/one"))
+        vm.onCurrentDestinationChanged(Route("omnideck://alpha/one"))
 
         vm.onBack()
 
-        assertThat(vm.state.value.currentRoute).isNull()
+        assertThat(vm.navigationIntents.first()).isEqualTo(ShellViewModel.NavIntent.Back)
     }
 
     @Test
@@ -188,7 +193,9 @@ class ShellViewModelTest {
         // result from a screen the user has already dismissed.
         val vm = viewModel()
         val correlationId = CorrelationId("abc")
-        sink.navigate(Route("omnideck://alpha/pick").withCorrelationId(correlationId))
+        // The NavController reports where the user is; the Shell mirrors it rather than
+        // tracking a second copy that could drift from the real back stack.
+        vm.onCurrentDestinationChanged(Route("omnideck://alpha/pick").withCorrelationId(correlationId))
 
         vm.onBack()
 
@@ -198,7 +205,7 @@ class ShellViewModelTest {
     @Test
     fun `leaving an ordinary destination abandons nothing`() = runTest {
         val vm = viewModel()
-        sink.navigate(Route("omnideck://alpha/plain"))
+        vm.onCurrentDestinationChanged(Route("omnideck://alpha/plain"))
 
         vm.onBack()
 
@@ -249,6 +256,10 @@ class ShellViewModelTest {
         updater = updater,
         destinations = destinations,
     )
+
+    /** The route of the next navigation the ViewModel asked the controller to perform. */
+    private suspend fun ShellViewModel.openIntent(): Route =
+        (navigationIntents.first() as ShellViewModel.NavIntent.Open).route
 
     private fun id(shortId: String) = ModuleId("com.omnideck.$shortId")
 
