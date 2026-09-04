@@ -49,7 +49,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-WEB_HOST = "omnideck.app"
+# No default host, deliberately. This tool used to default to `omnideck.app` — a
+# domain registered to someone else (ADR-011 amendment) — which meant a bare
+# `verify` sent live requests to a third party's server, and `generate` printed
+# "Publish this at https://omnideck.app/..." as an instruction. Whoever finally does
+# OD-321 will have just bought a *different* domain, and that is exactly the moment
+# a stale default costs the most. Requiring --host means the tool can never name or
+# contact an origin nobody chose.
 RELATION = "delegate_permission/common.handle_all_urls"
 WELL_KNOWN = "/.well-known/assetlinks.json"
 DAL_API = (
@@ -117,7 +123,7 @@ def cmd_generate(args: argparse.Namespace) -> int:
         f"\nPublish this at https://{args.host}{WELL_KNOWN}\n"
         "  - served over HTTPS, Content-Type application/json\n"
         "  - reachable with NO redirect (Android does not follow them for this file)\n"
-        "  - then run: python scripts/assetlinks.py verify\n"
+        f"  - then run: python scripts/assetlinks.py --host {args.host} verify\n"
         "Only after verify passes should autoVerify be set to true.",
         file=sys.stderr,
     )
@@ -274,7 +280,12 @@ def check_google_view(host: str, package: str) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--host", default=WEB_HOST, help=f"origin to check (default {WEB_HOST})")
+    parser.add_argument(
+        "--host",
+        required=True,
+        metavar="ORIGIN",
+        help="origin to publish under or check, e.g. omnideck.example. No default: see the note by RELATION.",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     gen = sub.add_parser("generate", help="emit the assetlinks.json to publish")
