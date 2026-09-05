@@ -147,7 +147,15 @@ open — run `./gradlew --stop` first.
   so the backend can share its manifest types and a KMP move stays a move. The Android half
   (`:platform:omnideck-sdk`) legitimately carries Compose/Room/OkHttp/WorkManager.
 - **`apiCheck`** — a change to either SDK's public ABI must include the regenerated `api/*.api`
-  dump **in the same commit** (ADR-004), and say so in the commit body.
+  dump **in the same commit** (ADR-004), and say so in the commit body. **The contract is frozen
+  as of the `sdk-1.0.0` tag (2026-09-04)**, which was the M2 exit gate's last requirement and is
+  what `implementation_plan.md` §1 was waiting for — two real, independently-built modules first
+  (Notes, then Finance, which the scaffolder produced with no Shell change). Regenerating a dump
+  is no longer a formality: past this tag it is a deliberate contract change, additive-only
+  within 1.x, and §20's deprecation policy governs removals — nothing goes in less than two minor
+  versions and never without a documented replacement. The host has reported `SemVer(1, 0, 0)` to
+  modules' `sdkRange` checks since Phase 2 (`KernelModule.hostSdkVersion`); the tag is the first
+  time that number is backed by a frozen artifact rather than a source constant.
 - **Custom Lint rules** (`tools/lint-rules/`) — `OmniDeckRawLog` bans `android.util.Log`
   (logging goes through `TelemetryService` for module attribution and PII redaction);
   `OmniDeckRawPermission` bans direct permission calls (go through `PermissionBroker`).
@@ -413,11 +421,18 @@ listed below it — it is still a software emulator, and it still has no Play St
   Still unexercised against real Play, so do not record these as met: **OD-302's
   `REQUIRES_USER_CONFIRMATION` branch** never fired — the splits are 50–76 KB, far below the size
   or metered-network thresholds Play requires confirmation for, so that path remains fake-only
-  and is awkward to trigger deliberately at this size. **OD-307** (`deferredUninstall`, purge
-  fan-out) and **OD-309** (both In-App Update flows, which need a second version code on the
-  track) are simply untested. **The M2 exit gate is closer but still not met** — it also wants
-  uninstall/reinstall data purge, a server-driven kill switch (OD-310, no backend), and the SDK
-  frozen and tagged `sdk-1.0.0`, which has not happened.
+  and is awkward to trigger deliberately at this size. **OD-309** (both In-App Update flows, which
+  need a second version code on the track) is untested.
+
+  **M2 exit gate: three of five.** Met are the signed on-demand AAB installed from the track, the
+  release-build module loading (OD-304), and — as of the `sdk-1.0.0` tag, 2026-09-04 — the frozen
+  contract. The two outstanding are both external rather than unfinished work here: a
+  **server-driven** kill switch needs a backend (OD-310), and **uninstall → reinstall → data
+  purged** needs re-confirming on a device now that the two defects which made it look broken are
+  fixed. Those were a stale Activity-scoped ViewModel rendering pre-purge data (OD-205, since the
+  Shell gave module destinations no `ViewModelStoreOwner`) and a state model that reported
+  `ADVERTISED` about a split Play had not yet reclaimed (OD-307). Neither was a storage failure;
+  the erasure itself was correct throughout.
 - **No backend** (OD-306, OD-310), still — a GMD is a client-side fix and this is a
   server-side gap. The Catalog serves what the device discovered, not a served catalog, and the
   kill switch reads a local flag rather than a pushed one. `ModuleManifest` is already
